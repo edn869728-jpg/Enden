@@ -734,12 +734,15 @@
     };
 
     // ── GAS call wrapper ─────────────────────────────
+    // Calls handleAdminRequest(params) on the server side.
+    // Note: google.script.run cannot invoke doPost (HTTP-only);
+    // the backend must expose a named function handleAdminRequest.
     function gasCall(params, callback) {
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
           .withSuccessHandler(function(result) { callback(null, result); })
           .withFailureHandler(function(err)    { callback(err, null);   })
-          .doPost(params);
+          .handleAdminRequest(params);
       } else {
         // Development stub – returns demo data
         setTimeout(function() { callback(null, stubResponse(params)); }, 600);
