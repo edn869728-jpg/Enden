@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>ANG Engine HR 系統</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    /* ===== CSS 變數 ===== */
+    :root {
+      --emp-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --emp-rgb: 102, 126, 234;
+      --text-on-emp: #ffffff;
+      --bg: #f5f6fa;
+      --card-bg: #ffffff;
+      --text: #2d3748;
+      --text-muted: #718096;
+      --border: #e2e8f0;
+      --radius: 12px;
+      --shadow: 0 4px 16px rgba(0,0,0,.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+
+    /* ===== 頂部導覽 ===== */
+    .topbar {
+      background: var(--emp-gradient);
+      color: var(--text-on-emp);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(var(--emp-rgb), .3);
+    }
+    .topbar-title { font-size: 1.1rem; font-weight: 700; }
+    .topbar-user  { font-size: .85rem; opacity: .85; }
+
+    /* ===== 底部導覽列 ===== */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--card-bg);
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 100;
+      box-shadow: 0 -4px 16px rgba(0,0,0,.06);
+    }
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 4px;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: .7rem;
+      transition: color .2s;
+      border: none;
+      background: none;
+    }
+    .nav-item i { font-size: 1.2rem; margin-bottom: 3px; }
+    .nav-item.active { color: #667eea; }
+
+    /* ===== 頁面容器 ===== */
+    .page { display: none; padding: 16px; }
+    .page.active { display: block; }
+
+    /* ===== 卡片 ===== */
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ===== 按鈕 ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .btn-primary {
+      background: var(--emp-gradient);
+      color: var(--text-on-emp);
+      box-shadow: 0 4px 12px rgba(var(--emp-rgb), .35);
+    }
+    .btn-primary:active { transform: scale(.97); }
+    .btn-ghost {
+      background: transparent;
+      color: #667eea;
+      border: 1.5px solid #667eea;
+      padding: 8px 16px;
+    }
+    /* Fix 4：active 狀態 */
+    .btn-ghost.active {
+      background: var(--emp-gradient) !important;
+      color: var(--text-on-emp) !important;
+      border-color: transparent !important;
+      box-shadow: 0 12px 24px rgba(var(--emp-rgb), .22) !important;
+    }
+    .btn-full { width: 100%; }
+
+    /* ===== 表單元素 ===== */
+    .label {
+      display: block;
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .input, .select, .textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: .95rem;
+      color: var(--text);
+      background: var(--card-bg);
+      outline: none;
+      transition: border-color .2s;
+    }
+    .input:focus, .select:focus, .textarea:focus { border-color: #667eea; }
+    .textarea { resize: vertical; min-height: 80px; }
+    .field { margin-bottom: 14px; }
+    .field-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .field-row > * { flex: 1; }
+
+    /* ===== Chip ===== */
+    .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      background: var(--card-bg);
+      color: var(--text);
+      font-size: .85rem;
+      cursor: pointer;
+      transition: all .2s;
+      user-select: none;
+    }
+    .chip.selected {
+      background: var(--emp-gradient);
+      color: var(--text-on-emp);
+      border-color: transparent;
+    }
+
+    /* ===== Weekday chip（選休用） ===== */
+    .weekday-chip {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1.5px solid var(--border);
+      background: var(--card-bg);
+      font-size: .8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+      user-select: none;
+    }
+    /* Fix 1：選中 weekday-chip = 休假 */
+    .weekday-chip.selected {
+      background: var(--emp-gradient);
+      color: var(--text-on-emp);
+      border-color: transparent;
+      box-shadow: 0 4px 10px rgba(var(--emp-rgb), .3);
+    }
+
+    /* ===== 工具格線 ===== */
+    .tool-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* ===== 通知狀態列 ===== */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: .78rem;
+      font-weight: 600;
+    }
+    .badge-pending  { background: #fef3c7; color: #92400e; }
+    .badge-approved { background: #d1fae5; color: #065f46; }
+    .badge-rejected { background: #fee2e2; color: #991b1b; }
+
+    /* ===== 薪資 ===== */
+    .salary-amount {
+      font-size: 2rem;
+      font-weight: 800;
+      background: var(--emp-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .salary-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    /* ===== 行事曆 ===== */
+    #calendar { border-radius: var(--radius); overflow: hidden; }
+  </style>
+</head>
+<body>
+
+<!-- ===== 頂部導覽 ===== -->
+<div class="topbar">
+  <div>
+    <div class="topbar-title">🏢 ANG Engine HR</div>
+    <div class="topbar-user" id="topbar-user-name">載入中…</div>
+  </div>
+  <div style="font-size:1.4rem;cursor:pointer" onclick="showPage('page-profile')">👤</div>
+</div>
+
+<!-- ===== 頁面：首頁 ===== -->
+<div class="page active" id="page-home">
+  <div class="card">
+    <div class="card-title">⏱ 今日打卡</div>
+    <div class="field-row">
+      <button class="btn btn-primary" onclick="doClock('上班')">🟢 上班打卡</button>
+      <button class="btn btn-ghost" onclick="doClock('下班')">🔴 下班打卡</button>
+    </div>
+    <div id="clock-records" style="margin-top:12px;font-size:.85rem;color:var(--text-muted)"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📅 本月出勤</div>
+    <div id="calendar"></div>
+  </div>
+</div>
+
+<!-- ===== 頁面：資料上傳 ===== -->
+<div class="page" id="page-upload">
+  <div class="card">
+    <div class="card-title">📤 資料上傳</div>
+
+    <!-- Fix 4：兩個按鈕加上 id -->
+    <div class="tool-grid" style="margin-bottom:10px;">
+      <button class="btn-ghost btn" type="button" id="btn-location"
+              onclick="getLocation()">📍 傳送位置資訊</button>
+      <button class="btn-ghost btn" type="button" id="btn-reimbursement"
+              onclick="toggleReimbursement()">💰 費用請款</button>
+    </div>
+
+    <!-- 費用請款（可收合） -->
+    <div id="reimbursement-box" style="display:none;margin-bottom:10px;">
+      <div class="field">
+        <label class="label">代墊金額</label>
+        <input class="input" type="number" id="r-amount" placeholder="請輸入金額（元）">
+      </div>
+      <div class="field">
+        <label class="label">代墊商品</label>
+        <input class="input" type="text" id="r-item" placeholder="請輸入商品名稱">
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label">類型</label>
+      <select class="select" id="u-type">
+        <option value="">請選擇類型</option>
+        <option value="請假">請假</option>
+        <option value="外勤回報">外勤回報</option>
+        <option value="費用請款">費用請款</option>
+        <option value="位置資訊（外勤回報用）">位置資訊（外勤回報用）</option>
+        <option value="其他">其他</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label class="label">標題</label>
+      <input class="input" type="text" id="u-title" placeholder="請輸入標題">
+    </div>
+
+    <div class="field">
+      <label class="label">申請內容（補充說明）</label>
+      <textarea class="textarea" id="u-note" placeholder="請輸入說明（可選）"></textarea>
+    </div>
+
+    <div class="field">
+      <label class="label">附件（可選）</label>
+      <input class="input" type="file" id="u-file" accept="image/*,application/pdf">
+    </div>
+
+    <button class="btn btn-primary btn-full" onclick="submitUpload()">📤 提交</button>
+  </div>
+
+  <!-- 我的申請紀錄 -->
+  <div class="card">
+    <div class="card-title">📋 我的申請紀錄</div>
+    <div id="upload-records">
+      <div style="text-align:center;color:var(--text-muted);padding:20px">載入中…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 頁面：選休 ===== -->
+<div class="page" id="page-preselect">
+  <div class="card">
+    <div class="card-title">📆 選休設定</div>
+
+    <div class="field">
+      <label class="label">選擇月份</label>
+      <input class="input" type="month" id="preselect-month">
+    </div>
+
+    <!-- Fix 1：標題改為「選擇你要休假的日期」 -->
+    <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:12px;">
+      ✅ 請選擇你要<strong>休假</strong>的日期（反白 = 休假）
+    </p>
+
+    <div class="chip-group" id="preselect-days" style="margin-bottom:16px;"></div>
+
+    <button class="btn btn-primary btn-full" onclick="submitPreselectFn()">✅ 確認送出選休</button>
+  </div>
+</div>
+
+<!-- ===== 頁面：薪資 ===== -->
+<div class="page" id="page-salary">
+  <div class="card">
+    <div class="card-title">💰 薪資查詢</div>
+
+    <!-- Fix 2：已發薪資 select + 下載按鈕（合併在同一行） -->
+    <div class="field">
+      <label class="label">已發薪資</label>
+      <!-- Fix 2：select 旁加「📄 下載」按鈕，移除下方重複區塊 -->
+      <div class="salary-row">
+        <select class="select" id="salary-history-select"
+                onchange="loadSalaryDetail()" style="flex:1">
+          <option value="">請選擇月份</option>
+        </select>
+        <button class="btn btn-ghost" style="white-space:nowrap;margin-left:8px"
+                onclick="downloadSalarySlip()">📄 下載</button>
+      </div>
+    </div>
+
+    <div id="salary-detail" style="margin-top:14px;">
+      <div style="text-align:center;color:var(--text-muted);padding:20px">
+        請先選擇月份
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 頁面：個人資料 ===== -->
+<div class="page" id="page-profile">
+  <div class="card">
+    <div class="card-title">👤 個人資料</div>
+    <div id="profile-content">
+      <div style="text-align:center;color:var(--text-muted);padding:20px">載入中…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 底部導覽列 ===== -->
+<nav class="bottom-nav">
+  <button class="nav-item active" onclick="showPage('page-home')">
+    <i class="fas fa-home"></i>首頁
+  </button>
+  <button class="nav-item" onclick="showPage('page-upload')">
+    <i class="fas fa-upload"></i>上傳
+  </button>
+  <button class="nav-item" onclick="showPage('page-preselect')">
+    <i class="fas fa-calendar-alt"></i>選休
+  </button>
+  <button class="nav-item" onclick="showPage('page-salary')">
+    <i class="fas fa-yen-sign"></i>薪資
+  </button>
+  <button class="nav-item" onclick="showPage('page-profile')">
+    <i class="fas fa-user"></i>我的
+  </button>
+</nav>
+
+<!-- ===== JavaScript ===== -->
+<script>
+// ---------- 工具 ----------
+/** 由 id 取得元素（簡寫） */
+function qs(id) { return document.getElementById(id); }
+
+/** HTML 跳脫，防止 XSS */
+function esc(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/** 顯示成功通知 */
+function showSuccess(msg) {
+  Swal.fire({ icon: 'success', title: msg, timer: 2000, showConfirmButton: false, toast: true, position: 'top' });
+}
+/** 顯示錯誤通知 */
+function showError(msg) {
+  Swal.fire({ icon: 'error', title: msg, showConfirmButton: true });
+}
+/** 顯示警告通知 */
+function showWarning(msg) {
+  Swal.fire({ icon: 'warning', title: msg, timer: 2500, showConfirmButton: false, toast: true, position: 'top' });
+}
+/** 顯示載入中 */
+function showLoading(msg) {
+  Swal.fire({ title: msg || '處理中…', allowOutsideClick: false, showConfirmButton: false,
+    willOpen: () => Swal.showLoading() });
+}
+
+// ---------- App 狀態 ----------
+var state = {
+  currentLocation: '',   // Fix 3：位置資訊獨立存
+  user: null
+};
+
+// ---------- 頁面切換 ----------
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(b) { b.classList.remove('active'); });
+  var page = qs(pageId);
+  if (page) page.classList.add('active');
+
+  // 對應底部導覽
+  var navMap = {
+    'page-home':      0,
+    'page-upload':    1,
+    'page-preselect': 2,
+    'page-salary':    3,
+    'page-profile':   4
+  };
+  var navItems = document.querySelectorAll('.nav-item');
+  if (navMap[pageId] !== undefined && navItems[navMap[pageId]]) {
+    navItems[navMap[pageId]].classList.add('active');
+  }
+
+  // 進入頁面時載入資料
+  if (pageId === 'page-salary')    loadSalaryHistory();
+  if (pageId === 'page-upload')    loadUploadRecords();
+  if (pageId === 'page-preselect') initPreselect();
+  if (pageId === 'page-profile')   loadProfile();
+  if (pageId === 'page-home')      loadTodayClock();
+}
+
+// ============================================================
+// 打卡
+// ============================================================
+function doClock(type) {
+  showLoading(type + '打卡中…');
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    var loc = pos.coords.latitude.toFixed(4) + ', ' + pos.coords.longitude.toFixed(4);
+    google.script.run
+      .withSuccessHandler(function(res) {
+        Swal.close();
+        if (res.ok) { showSuccess(res.msg); loadTodayClock(); }
+        else         showError(res.msg);
+      })
+      .withFailureHandler(function(e) { Swal.close(); showError(e.message); })
+      .clockIn({ type: type, location: loc });
+  }, function() {
+    google.script.run
+      .withSuccessHandler(function(res) {
+        Swal.close();
+        if (res.ok) { showSuccess(res.msg); loadTodayClock(); }
+        else         showError(res.msg);
+      })
+      .withFailureHandler(function(e) { Swal.close(); showError(e.message); })
+      .clockIn({ type: type, location: '' });
+  });
+}
+
+function loadTodayClock() {
+  google.script.run
+    .withSuccessHandler(function(res) {
+      var el = qs('clock-records');
+      if (!el) return;
+      if (!res.ok || !res.records.length) {
+        el.textContent = '今日尚無打卡紀錄'; return;
+      }
+      el.innerHTML = res.records.map(function(r) {
+        var t = new Date(r.time);
+        return '<div>' + esc(r.type) + '：' + esc(t.toLocaleTimeString('zh-Hant')) + '</div>';
+      }).join('');
+    })
+    .withFailureHandler(function() {})
+    .getTodayClockRecord();
+}
+
+// ============================================================
+// 資料上傳
+// ============================================================
+
+/**
+ * Fix 3：getLocation 成功後將座標存入 state.currentLocation（不寫進 textarea）。
+ * Fix 4：成功後按鈕加上 active 樣式。
+ */
+function getLocation() {
+  if (!navigator.geolocation) { showWarning('此裝置不支援定位'); return; }
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    // Fix 3：存到獨立變數
+    state.currentLocation = pos.coords.latitude.toFixed(4) + ', ' + pos.coords.longitude.toFixed(4);
+
+    // Fix 4：按鈕變色
+    var btn = qs('btn-location');
+    if (btn) btn.classList.add('active');
+
+    // 若類型尚未選擇，預填「位置資訊（外勤回報用）」
+    if (qs('u-type') && !qs('u-type').value) {
+      qs('u-type').value = '位置資訊（外勤回報用）';
+      if (!qs('u-title').value) qs('u-title').value = '位置資訊（外勤回報用）';
+    }
+    showSuccess('已取得位置資訊：' + state.currentLocation);
+  }, function() {
+    showError('無法取得位置資訊');
+  });
+}
+
+/**
+ * Fix 4：toggleReimbursement 展開/收合時切換 active 狀態。
+ */
+function toggleReimbursement() {
+  var box = qs('reimbursement-box');
+  var btn = qs('btn-reimbursement');
+  if (box) {
+    var isShow = box.style.display !== 'block';
+    box.style.display = isShow ? 'block' : 'none';
+    if (btn) btn.classList.toggle('active', isShow);
+  }
+}
+
+/**
+ * Fix 3：submitUpload 將 location、amount、item 作為獨立 payload 欄位傳送。
+ * Fix 4：送出成功後重設按鈕 active 狀態。
+ */
+function submitUpload() {
+  var type = qs('u-type') ? qs('u-type').value.trim() : '';
+  if (!type) { showWarning('請選擇類型'); return; }
+
+  showLoading('提交中…');
+
+  var fileInput = qs('u-file');
+  var file = fileInput && fileInput.files[0];
+
+  function doSubmit(base64) {
+    var payload = {
+      type:     type,
+      title:    qs('u-title') ? qs('u-title').value.trim() : '',
+      note:     qs('u-note')  ? qs('u-note').value.trim()  : '',
+      // Fix 3：獨立欄位
+      location: state.currentLocation || '',
+      amount:   qs('r-amount') ? qs('r-amount').value.trim() : '',
+      item:     qs('r-item')   ? qs('r-item').value.trim()   : '',
+      attachment: base64 || ''
+    };
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        Swal.close();
+        if (res.ok) {
+          showSuccess('提交成功！');
+          resetUploadForm();
+          loadUploadRecords();
+        } else {
+          showError(res.msg);
+        }
+      })
+      .withFailureHandler(function(e) { Swal.close(); showError(e.message); })
+      .submitEmployeeUpload(payload);
+  }
+
+  if (file) {
+    var reader = new FileReader();
+    reader.onload = function(e) { doSubmit(e.target.result); };
+    reader.readAsDataURL(file);
+  } else {
+    doSubmit('');
+  }
+}
+
+/** 重設上傳表單；Fix 4：同時重設按鈕 active 狀態 */
+function resetUploadForm() {
+  ['u-type','u-title','u-note','r-amount','r-item'].forEach(function(id) {
+    var el = qs(id); if (el) el.value = '';
+  });
+  var fi = qs('u-file'); if (fi) fi.value = '';
+
+  // Fix 3 & 4：清除 location 狀態與按鈕顏色
+  state.currentLocation = '';
+  var btnLoc = qs('btn-location');
+  if (btnLoc) btnLoc.classList.remove('active');
+
+  // Fix 4：收合費用請款並清除按鈕顏色
+  var box = qs('reimbursement-box');
+  if (box) box.style.display = 'none';
+  var btnReim = qs('btn-reimbursement');
+  if (btnReim) btnReim.classList.remove('active');
+}
+
+function loadUploadRecords() {
+  var el = qs('upload-records');
+  if (el) el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px">載入中…</div>';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (!el) return;
+      if (!res.ok || !res.records.length) {
+        el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px">暫無紀錄</div>';
+        return;
+      }
+      el.innerHTML = res.records.map(function(r) {
+        var badgeClass = r.status === '已核准' ? 'badge-approved'
+                        : r.status === '已拒絕' ? 'badge-rejected' : 'badge-pending';
+        return '<div style="border-bottom:1px solid var(--border);padding:10px 0;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center">' +
+            '<strong>' + esc(r.title || r.type) + '</strong>' +
+            '<span class="status-badge ' + esc(badgeClass) + '">' + esc(r.status || '待審核') + '</span>' +
+          '</div>' +
+          '<div style="font-size:.82rem;color:var(--text-muted);margin-top:4px">' +
+            esc(r.submitTime ? new Date(r.submitTime).toLocaleDateString('zh-Hant') : '') +
+          '</div>' +
+        '</div>';
+      }).join('');
+    })
+    .withFailureHandler(function() {
+      if (el) el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px">載入失敗</div>';
+    })
+    .getMyUploadRecords();
+}
+
+// ============================================================
+// 選休
+// ============================================================
+
+/** Fix 1：初始化選休頁面，從後端讀取已儲存的休假日期並反映到 chip 上 */
+function initPreselect() {
+  var monthInput = qs('preselect-month');
+  if (!monthInput.value) {
+    var now = new Date();
+    monthInput.value = now.getFullYear() + '-' +
+      String(now.getMonth() + 1).padStart(2, '0');
+  }
+  renderPreselectDays(monthInput.value);
+}
+
+function renderPreselectDays(yearMonth, preSelected) {
+  var container = qs('preselect-days');
+  if (!container) return;
+  container.innerHTML = '';
+
+  var parts = yearMonth.split('-');
+  var year  = parseInt(parts[0], 10);
+  var month = parseInt(parts[1], 10);
+  var daysInMonth = new Date(year, month, 0).getDate();
+
+  var selectedSet = {};
+  (preSelected || []).forEach(function(d) { selectedSet[d] = true; });
+
+  for (var day = 1; day <= daysInMonth; day++) {
+    (function(d) {
+      var chip = document.createElement('div');
+      chip.className = 'weekday-chip' + (selectedSet[d] ? ' selected' : '');
+      chip.textContent = d;
+      chip.title = year + '-' + String(month).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+      // Fix 1：選中 chip = 休假
+      chip.addEventListener('click', function() {
+        chip.classList.toggle('selected');
+      });
+      container.appendChild(chip);
+    })(day);
+  }
+}
+
+qs('preselect-month') && qs('preselect-month').addEventListener('change', function() {
+  var yearMonth = this.value;
+  // 切換月份時先從後端讀取已選資料
+  google.script.run
+    .withSuccessHandler(function(res) {
+      renderPreselectDays(yearMonth, res.selected || []);
+    })
+    .withFailureHandler(function() {
+      renderPreselectDays(yearMonth, []);
+    })
+    .getMyPreselect(yearMonth);
+});
+
+/** Fix 1：submitPreselectFn — 收集選中的 chip（= 休假日期），送往後端 */
+function submitPreselectFn() {
+  var yearMonth = qs('preselect-month') ? qs('preselect-month').value : '';
+  if (!yearMonth) { showWarning('請選擇月份'); return; }
+
+  // Fix 1：選中的 chip = 休假日期
+  var selectedDates = [];
+  document.querySelectorAll('#preselect-days .weekday-chip.selected').forEach(function(chip) {
+    selectedDates.push(parseInt(chip.textContent, 10));
+  });
+
+  showLoading('提交選休中…');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      Swal.close();
+      if (res.ok) showSuccess(res.msg || '選休提交成功');
+      else         showError(res.msg);
+    })
+    .withFailureHandler(function(e) { Swal.close(); showError(e.message); })
+    .submitPreselect({ yearMonth: yearMonth, selectedDates: selectedDates });
+}
+
+// ============================================================
+// 薪資
+// ============================================================
+
+function loadSalaryHistory() {
+  google.script.run
+    .withSuccessHandler(function(res) {
+      var sel = qs('salary-history-select');
+      if (!sel) return;
+      // 清空（保留預設選項）
+      while (sel.options.length > 1) sel.remove(1);
+      if (res.ok && res.records.length) {
+        res.records.forEach(function(r) {
+          var opt = document.createElement('option');
+          opt.value = r.month;
+          opt.textContent = r.month + '（' + (r.status || '已發') + '）';
+          sel.appendChild(opt);
+        });
+      }
+    })
+    .withFailureHandler(function() {})
+    .getSalaryHistory();
+}
+
+function loadSalaryDetail() {
+  var sel = qs('salary-history-select');
+  var detail = qs('salary-detail');
+  if (!sel || !detail) return;
+  var month = sel.value;
+  if (!month) {
+    detail.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px">請先選擇月份</div>';
+    return;
+  }
+  detail.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px">載入中…</div>';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      detail.innerHTML = '';
+      if (res.ok) {
+        var amtDiv = document.createElement('div');
+        amtDiv.className = 'salary-amount';
+        amtDiv.textContent = 'NT$ ' + (res.amount || '—');
+        var mthDiv = document.createElement('div');
+        mthDiv.style.cssText = 'font-size:.85rem;color:var(--text-muted);margin-top:4px';
+        mthDiv.textContent = month;
+        detail.appendChild(amtDiv);
+        detail.appendChild(mthDiv);
+      } else {
+        var msgDiv = document.createElement('div');
+        msgDiv.style.color = 'var(--text-muted)';
+        msgDiv.textContent = res.msg || '無資料';
+        detail.appendChild(msgDiv);
+      }
+    })
+    .withFailureHandler(function() {
+      detail.innerHTML = '<div style="color:var(--text-muted)">載入失敗</div>';
+    })
+    .getSalarySlipData(month);
+}
+
+/**
+ * Fix 2：downloadSalarySlip 從 salary-history-select 取月份，不再需要獨立的 slipMonth 欄位。
+ */
+function downloadSalarySlip() {
+  // Fix 2：從已選薪資紀錄取得月份
+  var sel = qs('salary-history-select');
+  var month = sel ? sel.value : '';
+  if (!month) { showWarning('請先選擇薪資月份'); return; }
+
+  showLoading('準備薪資單…');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      Swal.close();
+      if (res.ok && res.url) {
+        window.open(res.url, '_blank');
+      } else {
+        showWarning(res.msg || '目前無法下載此月份薪資單');
+      }
+    })
+    .withFailureHandler(function(e) { Swal.close(); showError(e.message); })
+    .getSalarySlipData(month);
+}
+
+// ============================================================
+// 個人資料
+// ============================================================
+function loadProfile() {
+  // 實際實作依後端 getUserProfile 調整
+  var el = qs('profile-content');
+  if (el) el.innerHTML = '<div style="color:var(--text-muted)">個人資料載入中…</div>';
+}
+
+// ============================================================
+// 初始化
+// ============================================================
+(function init() {
+  // 初始化選休月份預設值
+  var monthInput = qs('preselect-month');
+  if (monthInput && !monthInput.value) {
+    var now = new Date();
+    monthInput.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  }
+
+  // 初始化 FullCalendar（首頁行事曆）
+  var calEl = qs('calendar');
+  if (calEl && typeof FullCalendar !== 'undefined') {
+    new FullCalendar.Calendar(calEl, {
+      initialView: 'dayGridMonth',
+      locale: 'zh-tw',
+      headerToolbar: { left: 'prev', center: 'title', right: 'next' }
+    }).render();
+  }
+
+  // 載入今日打卡
+  loadTodayClock();
+})();
+</script>
+</body>
+</html>
