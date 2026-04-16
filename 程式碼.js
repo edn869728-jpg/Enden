@@ -13,6 +13,11 @@ var SHEET_PRESELECT = '選休排班';
 var SHEET_UPLOAD    = '上傳記錄';
 var SHEET_SCHEDULE  = '班表';
 
+/**
+ * Column order for the '上傳記錄' sheet.
+ * IMPORTANT: This array must match the exact column order in the spreadsheet.
+ * Any changes here require corresponding updates to the sheet headers.
+ */
 var RECEIVE_COLS = ['申請編號', '類型', '員編', '姓名', '職稱', '補充說明', '代墊金額', '代墊商品', '位置資訊', '附件', '申請時間', '審核狀態', '審核人員', '審核時間', '審核意見', '審核人清單', '目前審核人', '已審核人員'];
 
 // ── Generic helpers ──────────────────────────────────────────

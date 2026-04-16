@@ -574,6 +574,12 @@
 
 <script>
 /* ════════════════════════════════════════════════════════════
+   Utilities
+   ════════════════════════════════════════════════════════════ */
+/** Zero-pad a number to 2 digits. */
+function pad(n) { return n < 10 ? '0' + n : String(n); }
+
+/* ════════════════════════════════════════════════════════════
    State
    ════════════════════════════════════════════════════════════ */
 var empId   = '';
@@ -678,8 +684,7 @@ function gasCall(params, callback) {
    ════════════════════════════════════════════════════════════ */
 function doClock(type) {
   var now = new Date();
-  var timeStr = now.getHours().toString().padStart(2,'0') + ':' +
-                now.getMinutes().toString().padStart(2,'0');
+  var timeStr = pad(now.getHours()) + ':' + pad(now.getMinutes());
   if (type === '上班') {
     document.getElementById('clockIn').textContent = timeStr;
   } else {
@@ -840,7 +845,6 @@ function loadPreselectDays() {
   var mon   = parseInt(parts[1], 10);
   var daysInMonth = new Date(year, mon, 0).getDate();
   var weekNames = ['日', '一', '二', '三', '四', '五', '六'];
-  var pad = function (n) { return n < 10 ? '0' + n : String(n); };
 
   for (var d = 1; d <= daysInMonth; d++) {
     var dateStr = year + '-' + pad(mon) + '-' + pad(d);

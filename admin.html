@@ -706,6 +706,10 @@
     var adminRole = '';  // '主管' | '人資' | '創辦人'
 
     // ── Role → pages mapping ─────────────────────────
+    // Manager (主管): Handles day-to-day HR tasks — leave, uploads, messages, notifications, scheduling
+    // Admin (人資):   Handles HR administration — clock-fix, salary review, system settings, archival
+    //                 Also reviews leave, uploads, and messages like Manager
+    // Creator (創辦人): Full access to all pages (superset of Manager + Admin)
     var ROLE_PAGES = {
       '主管':   ['home', 'leave', 'upload', 'message', 'notify', 'schedule'],
       '人資':   ['home', 'leave', 'clockfix', 'upload', 'message', 'salary', 'deadline', 'brand', 'archive'],
