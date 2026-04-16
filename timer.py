@@ -18,8 +18,7 @@ def countdown(seconds: int, tick_callback=None) -> None:
             break
         elapsed = time.perf_counter() - start
         target = seconds - remaining + 1
-        sleep_time = max(0.0, target - elapsed)
-        time.sleep(sleep_time)
+        time.sleep(max(0.0, target - elapsed))
 
 
 def stopwatch() -> float:
@@ -29,45 +28,48 @@ def stopwatch() -> float:
     input("按 Enter 開始計時...")
     start = time.perf_counter()
     input("按 Enter 停止計時...")
-    elapsed = time.perf_counter() - start
-    return elapsed
+    return time.perf_counter() - start
+
+
+def _fmt_time(total_seconds) -> str:
+    """將秒數格式化為 MM:SS 或 HH:MM:SS 字串。"""
+    total_seconds = int(total_seconds)
+    hours, rem = divmod(total_seconds, 3600)
+    mins, secs = divmod(rem, 60)
+    if hours:
+        return f"{hours:02d}:{mins:02d}:{secs:02d}"
+    return f"{mins:02d}:{secs:02d}"
 
 
 def _default_tick(remaining: int) -> None:
-    hours, rem = divmod(remaining, 3600)
-    mins, secs = divmod(rem, 60)
-    if hours:
-        print(f"\r  ⏱  {hours:02d}:{mins:02d}:{secs:02d}", end="", flush=True)
-    else:
-        print(f"\r  ⏱  {mins:02d}:{secs:02d}", end="", flush=True)
+    print(f"\r  ⏱  {_fmt_time(remaining)}", end="", flush=True)
 
 
 def run_timer_cli() -> None:
     """互動式計時器 CLI。"""
-    commands = {
-        "1": "倒數計時",
-        "2": "碼錶",
-        "0": "返回主選單",
-    }
     while True:
         print("\n=== 計時器 ===")
-        for key, desc in commands.items():
-            print(f"  {key}. {desc}")
+        print("  1. 倒數計時")
+        print("  2. 碼錶")
+        print("  0. 返回主選單")
         choice = input("請選擇: ").strip()
 
         if choice == "1":
+            raw = input("倒數秒數: ").strip()
             try:
-                total = int(input("倒數秒數: "))
+                total = int(raw)
                 if total <= 0:
                     raise ValueError
-                print()
-                try:
-                    countdown(total)
-                    print("\n  ⏰ 時間到！")
-                except KeyboardInterrupt:
-                    print("\n  ⏹ 計時已中止")
             except ValueError:
-                print("請輸入正整數")
+                print("  ✘ 請輸入正整數")
+                continue
+            print()
+            try:
+                countdown(total)
+                print("\n  ⏰ 時間到！")
+            except KeyboardInterrupt:
+                print("\n  ⏹ 計時已中止")
+
         elif choice == "2":
             try:
                 elapsed = stopwatch()
@@ -80,7 +82,9 @@ def run_timer_cli() -> None:
                 print(f"  經過時間: {int(hours):02d}:{int(mins):02d}:{secs:05.2f}")
             else:
                 print(f"  經過時間: {int(mins):02d}:{secs:05.2f}")
+
         elif choice == "0":
             break
+
         else:
-            print("無效選項，請重新輸入")
+            print("  ✘ 無效選項，請輸入 0、1 或 2")

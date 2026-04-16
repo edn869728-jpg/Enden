@@ -19,9 +19,9 @@ MENU = {
 
 
 def main() -> None:
-    print("╔════════════════════════════╗")
-    print("║  Enden — 方便程式系統       ║")
-    print("╚════════════════════════════╝")
+    print("╔══════════════════════════════╗")
+    print("║   Enden — 方便程式系統        ║")
+    print("╚══════════════════════════════╝")
     while True:
         print("\n主選單:")
         for key, (name, _) in MENU.items():
@@ -33,7 +33,7 @@ def main() -> None:
         if choice in MENU and MENU[choice][1] is not None:
             MENU[choice][1]()
         else:
-            print("無效選項，請重新輸入")
+            print("  ✘ 無效選項，請輸入 0-4")
 
 
 if __name__ == "__main__":

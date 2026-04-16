@@ -1,31 +1,19 @@
 """計算機 (Calculator)"""
 
-import operator
 import re
-
-
-OPERATORS = {
-    "+": operator.add,
-    "-": operator.sub,
-    "*": operator.mul,
-    "/": operator.truediv,
-    "//": operator.floordiv,
-    "%": operator.mod,
-    "**": operator.pow,
-}
 
 
 def calculate(expression: str) -> float:
     """
     計算一個數學運算式並回傳結果。
-    支援: +, -, *, /, //, %, **
+    支援: +, -, *, /, //, %, **  以及括號與小數點。
 
     範例:
-        calculate("3 + 4 * 2")  -> 11.0
-        calculate("10 / 2")     -> 5.0
+        calculate("3 + 4 * 2")   -> 11.0
+        calculate("10 / 2")      -> 5.0
+        calculate("(2 + 3) ** 2") -> 25.0
     """
-    # 只允許數字、空格以及合法的運算符號，避免程式碼注入
-    if not re.fullmatch(r"[\d\s\+\-\*\/\%\.\(\)]+", expression):
+    if not expression or not re.fullmatch(r"[\d\s\+\-\*\/\%\.\(\)]+", expression):
         raise ValueError(f"不合法的運算式: {expression!r}")
     try:
         result = eval(expression, {"__builtins__": {}})  # noqa: S307
@@ -39,16 +27,14 @@ def calculate(expression: str) -> float:
 def run_calculator_cli() -> None:
     """互動式計算機 CLI。"""
     print("\n=== 計算機 ===")
-    print("支援運算符: + - * / // % **  (輸入 '0' 返回)")
+    print("支援運算符: + - * / // % **  以及括號 ( )")
+    print("直接按 Enter（空白）返回主選單")
     while True:
-        expr = input("輸入運算式: ").strip()
-        if expr == "0":
-            break
+        expr = input("\n運算式: ").strip()
         if not expr:
-            continue
+            break
         try:
             result = calculate(expr)
-            # 如果結果是整數就不顯示小數點
             if result == int(result):
                 print(f"  = {int(result)}")
             else:

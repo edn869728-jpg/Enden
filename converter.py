@@ -38,6 +38,7 @@ _WEIGHT = {
 
 _TEMPERATURE_UNITS = ["°C", "°F", "K"]
 
+# None 表示溫度類別使用專用函式處理
 CATEGORIES = {
     "長度": _LENGTH,
     "重量": _WEIGHT,
@@ -53,7 +54,6 @@ def convert(value: float, from_unit: str, to_unit: str) -> float:
         convert(1, "公里", "公尺")  -> 1000.0
         convert(100, "°C", "°F")   -> 212.0
     """
-    # 溫度特殊處理
     if from_unit in _TEMPERATURE_UNITS or to_unit in _TEMPERATURE_UNITS:
         return _convert_temperature(value, from_unit, to_unit)
 
@@ -91,37 +91,47 @@ def _convert_temperature(value: float, from_unit: str, to_unit: str) -> float:
 def run_converter_cli() -> None:
     """互動式單位換算器 CLI。"""
     print("\n=== 單位換算器 ===")
-
     cat_keys = list(CATEGORIES.keys())
 
     while True:
         print("\n類別:")
         for i, name in enumerate(cat_keys, 1):
             print(f"  {i}. {name}")
-        print("  0. 返回")
+        print("  0. 返回主選單")
         choice = input("請選擇: ").strip()
 
         if choice == "0":
             break
-
         if not choice.isdigit() or not (1 <= int(choice) <= len(cat_keys)):
-            print("無效選項")
+            print("  ✘ 無效選項，請輸入 0 或 1-3")
             continue
 
         cat_name = cat_keys[int(choice) - 1]
         table = CATEGORIES[cat_name]
+        units = _TEMPERATURE_UNITS if table is None else list(table.keys())
 
-        if table is None:
-            units = _TEMPERATURE_UNITS
-        else:
-            units = list(table.keys())
+        print(f"\n可用單位 ({cat_name}):")
+        print(f"  {', '.join(units)}")
+        print("（直接按 Enter 取消換算）")
 
-        print(f"\n可用單位 ({cat_name}): {', '.join(units)}")
+        raw_value = input("輸入數值: ").strip()
+        if not raw_value:
+            continue
         try:
-            value = float(input("輸入數值: "))
-            from_unit = input("從 (單位): ").strip()
-            to_unit = input("到 (單位): ").strip()
+            value = float(raw_value)
+        except ValueError:
+            print("  ✘ 請輸入有效的數字")
+            continue
+
+        from_unit = input("從 (單位): ").strip()
+        if not from_unit:
+            continue
+        to_unit = input("到 (單位): ").strip()
+        if not to_unit:
+            continue
+
+        try:
             result = convert(value, from_unit, to_unit)
-            print(f"  {value} {from_unit} = {result:.6g} {to_unit}")
+            print(f"\n  {value} {from_unit}  =  {result:.6g} {to_unit}")
         except ValueError as e:
-            print(f"  錯誤: {e}")
+            print(f"  ✘ {e}")

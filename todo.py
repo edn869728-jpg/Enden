@@ -21,6 +21,9 @@ def _save(todos: list) -> None:
 
 def add_task(title: str) -> dict:
     """新增一個待辦事項。"""
+    title = title.strip()
+    if not title:
+        raise ValueError("任務名稱不能為空")
     todos = _load()
     task = {
         "id": (max((t["id"] for t in todos), default=0) + 1),
@@ -62,61 +65,65 @@ def delete_task(task_id: int) -> bool:
     return True
 
 
-def run_todo_cli() -> None:
-    """互動式待辦事項 CLI。"""
-    commands = {
-        "1": "新增任務",
-        "2": "列出所有任務",
-        "3": "列出未完成任務",
-        "4": "完成任務",
-        "5": "刪除任務",
-        "0": "返回主選單",
-    }
-    while True:
-        print("\n=== 待辦事項管理器 ===")
-        for key, desc in commands.items():
-            print(f"  {key}. {desc}")
-        choice = input("請選擇: ").strip()
-
-        if choice == "1":
-            title = input("任務名稱: ").strip()
-            if title:
-                task = add_task(title)
-                print(f"✔ 已新增任務 #{task['id']}: {task['title']}")
-        elif choice == "2":
-            tasks = list_tasks(show_done=True)
-            _print_tasks(tasks)
-        elif choice == "3":
-            tasks = list_tasks(show_done=False)
-            _print_tasks(tasks)
-        elif choice == "4":
-            try:
-                task_id = int(input("任務 ID: "))
-                if complete_task(task_id):
-                    print(f"✔ 任務 #{task_id} 已完成")
-                else:
-                    print(f"✘ 找不到任務 #{task_id}")
-            except ValueError:
-                print("請輸入有效的 ID")
-        elif choice == "5":
-            try:
-                task_id = int(input("任務 ID: "))
-                if delete_task(task_id):
-                    print(f"✔ 任務 #{task_id} 已刪除")
-                else:
-                    print(f"✘ 找不到任務 #{task_id}")
-            except ValueError:
-                print("請輸入有效的 ID")
-        elif choice == "0":
-            break
-        else:
-            print("無效選項，請重新輸入")
-
-
 def _print_tasks(tasks: list) -> None:
     if not tasks:
         print("  (無任務)")
         return
     for t in tasks:
         status = "✔" if t["done"] else "○"
-        print(f"  [{status}] #{t['id']} {t['title']}  ({t['created_at'][:10]})")
+        print(f"  [{status}] #{t['id']}  {t['title']}  ({t['created_at'][:10]})")
+
+
+def run_todo_cli() -> None:
+    """互動式待辦事項 CLI。"""
+    while True:
+        print("\n=== 待辦事項管理器 ===")
+        print("  1. 新增任務")
+        print("  2. 列出所有任務")
+        print("  3. 列出未完成任務")
+        print("  4. 完成任務")
+        print("  5. 刪除任務")
+        print("  0. 返回主選單")
+        choice = input("請選擇: ").strip()
+
+        if choice == "1":
+            title = input("任務名稱: ").strip()
+            if not title:
+                print("  ✘ 任務名稱不能為空")
+                continue
+            task = add_task(title)
+            print(f"  ✔ 已新增任務 #{task['id']}: {task['title']}")
+
+        elif choice == "2":
+            _print_tasks(list_tasks(show_done=True))
+
+        elif choice == "3":
+            _print_tasks(list_tasks(show_done=False))
+
+        elif choice == "4":
+            try:
+                task_id = int(input("任務 ID: ").strip())
+            except ValueError:
+                print("  ✘ 請輸入有效的數字 ID")
+                continue
+            if complete_task(task_id):
+                print(f"  ✔ 任務 #{task_id} 已標記完成")
+            else:
+                print(f"  ✘ 找不到任務 #{task_id}")
+
+        elif choice == "5":
+            try:
+                task_id = int(input("任務 ID: ").strip())
+            except ValueError:
+                print("  ✘ 請輸入有效的數字 ID")
+                continue
+            if delete_task(task_id):
+                print(f"  ✔ 任務 #{task_id} 已刪除")
+            else:
+                print(f"  ✘ 找不到任務 #{task_id}")
+
+        elif choice == "0":
+            break
+
+        else:
+            print("  ✘ 無效選項，請輸入 0-5")

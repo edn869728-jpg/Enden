@@ -5,6 +5,7 @@ import os
 import json
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -39,6 +40,12 @@ class TestCalculator(unittest.TestCase):
     def test_complex_expression(self):
         self.assertAlmostEqual(calculator.calculate("3 + 4 * 2"), 11.0)
 
+    def test_zero(self):
+        self.assertAlmostEqual(calculator.calculate("0"), 0.0)
+
+    def test_zero_expression(self):
+        self.assertAlmostEqual(calculator.calculate("5 - 5"), 0.0)
+
     def test_division_by_zero(self):
         with self.assertRaises(ZeroDivisionError):
             calculator.calculate("1 / 0")
@@ -46,6 +53,10 @@ class TestCalculator(unittest.TestCase):
     def test_invalid_expression(self):
         with self.assertRaises(ValueError):
             calculator.calculate("import os")
+
+    def test_empty_expression(self):
+        with self.assertRaises(ValueError):
+            calculator.calculate("")
 
 
 class TestConverter(unittest.TestCase):
@@ -80,11 +91,9 @@ class TestConverter(unittest.TestCase):
 
 class TestTodo(unittest.TestCase):
     def setUp(self):
-        # 用臨時檔案隔離每個測試
         self._tmp = tempfile.NamedTemporaryFile(suffix=".json", delete=False)
         self._tmp.close()
         todo.TODO_FILE = self._tmp.name
-        # 清空檔案
         with open(todo.TODO_FILE, "w") as f:
             json.dump([], f)
 
@@ -96,6 +105,14 @@ class TestTodo(unittest.TestCase):
         self.assertEqual(task["title"], "買牛奶")
         self.assertFalse(task["done"])
         self.assertEqual(task["id"], 1)
+
+    def test_add_task_strips_whitespace(self):
+        task = todo.add_task("  測試  ")
+        self.assertEqual(task["title"], "測試")
+
+    def test_add_empty_task_raises(self):
+        with self.assertRaises(ValueError):
+            todo.add_task("   ")
 
     def test_list_tasks(self):
         todo.add_task("任務一")
@@ -142,13 +159,21 @@ class TestTodo(unittest.TestCase):
 class TestTimer(unittest.TestCase):
     def test_countdown_calls_tick(self):
         ticks = []
-        timer.countdown(3, tick_callback=ticks.append)
+        with patch("time.sleep"):
+            timer.countdown(3, tick_callback=ticks.append)
         self.assertEqual(ticks, [3, 2, 1, 0])
 
     def test_countdown_zero(self):
         ticks = []
-        timer.countdown(0, tick_callback=ticks.append)
+        with patch("time.sleep"):
+            timer.countdown(0, tick_callback=ticks.append)
         self.assertEqual(ticks, [0])
+
+    def test_fmt_time_seconds_only(self):
+        self.assertEqual(timer._fmt_time(90), "01:30")
+
+    def test_fmt_time_with_hours(self):
+        self.assertEqual(timer._fmt_time(3661), "01:01:01")
 
 
 if __name__ == "__main__":
