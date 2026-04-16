@@ -1318,9 +1318,8 @@ function selectRequestType(el) {
   var expenseFields = document.getElementById('expense-fields');
   var clockFields   = document.getElementById('clockfix-fields');
 
-  expenseFields.className = 'shown';
-  clockFields.style.display = 'none';
   expenseFields.className = '';
+  clockFields.style.display = 'none';
 
   if (currentRequestType === '費用請款') {
     expenseFields.classList.add('shown');
