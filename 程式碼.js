@@ -345,7 +345,7 @@ function getReviewCardsForRole_(role, empDept) {
     '待審核'
   );
 
-  var clockFixInclude = ['員編', '姓名', '補打卡時間', '類型', '事由', '申請日期'];
+  var clockFixInclude = ['員編', '姓名', '日期', '時間', '類型', '事由', '申請日期'];
   var clockFixCards = getReviewCards_(
     SHEET_CLOCK_FIX,
     clockFixInclude,
@@ -581,7 +581,8 @@ function getPendingCounts() {
       var data = s.getDataRange().getValues();
       if (data.length < 2) return 0;
       var headers = data[0].map(function(h) { return clean_(h); });
-      var statusIdx = headers.indexOf('狀態') >= 0 ? headers.indexOf('狀態') : headers.indexOf('審核狀態');
+      var statusIdx = headers.indexOf('狀態');
+      if (statusIdx < 0) statusIdx = headers.indexOf('審核狀態');
       if (statusIdx < 0) return 0;
       var count = 0;
       for (var i = 1; i < data.length; i++) {
