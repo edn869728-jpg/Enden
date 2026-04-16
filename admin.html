@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>管理後台</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --manager-color: #667eea;
+      --admin-color: #f5576c;
+      --creator-color: #43e97b;
+      --accent: #667eea;
+      --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --bg: #f4f6fb;
+      --card-bg: #ffffff;
+      --text: #2d3748;
+      --text-muted: #718096;
+      --border: #e2e8f0;
+      --shadow: 0 2px 12px rgba(0,0,0,0.08);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+      --nav-height: 64px;
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: calc(var(--nav-height) + 16px);
+    }
+
+    /* ── Header ─────────────────────────────────────── */
+    .app-header {
+      background: var(--accent-gradient);
+      color: #fff;
+      padding: 20px 20px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 16px rgba(102,126,234,0.3);
+    }
+    .app-header h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .app-header .subtitle {
+      font-size: 0.78rem;
+      opacity: 0.82;
+      margin-top: 2px;
+    }
+
+    /* ── Pages ──────────────────────────────────────── */
+    .page { display: none; padding: 16px; animation: fadeIn 0.25s ease; }
+    .page.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── Section title ──────────────────────────────── */
+    .section-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 20px 0 10px;
+    }
+    .section-title:first-child { margin-top: 4px; }
+
+    /* ── Card ───────────────────────────────────────── */
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      margin-bottom: 12px;
+    }
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-title i { color: var(--accent); font-size: 1rem; }
+
+    /* ── Welcome card ───────────────────────────────── */
+    .welcome-card {
+      background: var(--accent-gradient);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 22px 20px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-lg);
+    }
+    .welcome-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .role-chip {
+      display: inline-block;
+      background: rgba(255,255,255,0.28);
+      color: #fff;
+      border-radius: 20px;
+      padding: 3px 14px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Count grid ─────────────────────────────────── */
+    .count-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .count-card {
+      background: var(--card-bg);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow);
+      padding: 14px 12px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .count-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--accent-gradient);
+    }
+    .count-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    .count-num {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .count-num.loading { font-size: 1.2rem; color: var(--text-muted); }
+
+    /* ── Notification list ──────────────────────────── */
+    .notif-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .notif-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .notif-icon {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: var(--accent-gradient);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      color: #fff;
+      font-size: 0.85rem;
+    }
+    .notif-body { flex: 1; }
+    .notif-text { font-size: 0.85rem; font-weight: 500; line-height: 1.4; }
+    .notif-time { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+    .empty-state {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 20px;
+      font-size: 0.85rem;
+    }
+    .empty-state i { font-size: 2rem; display: block; margin-bottom: 8px; opacity: 0.4; }
+
+    /* ── Quick actions ──────────────────────────────── */
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .quick-btn {
+      background: var(--card-bg);
+      border: none;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow);
+      padding: 14px 6px;
+      cursor: pointer;
+      text-align: center;
+      transition: transform 0.15s, box-shadow 0.15s;
+      font-family: inherit;
+    }
+    .quick-btn:active { transform: scale(0.96); box-shadow: none; }
+    .quick-btn i {
+      display: block;
+      font-size: 1.3rem;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+    .quick-btn span { font-size: 0.72rem; color: var(--text); font-weight: 500; }
+
+    /* ── Review list ────────────────────────────────── */
+    .review-item {
+      background: var(--card-bg);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+    .review-item-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .review-item-name { font-weight: 700; font-size: 0.9rem; }
+    .review-item-date { font-size: 0.75rem; color: var(--text-muted); }
+    .review-item-meta { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 10px; }
+    .review-actions { display: flex; gap: 8px; }
+    .btn-approve, .btn-reject {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.15s;
+    }
+    .btn-approve { background: #48bb78; color: #fff; }
+    .btn-reject  { background: #fc8181; color: #fff; }
+    .btn-approve:active, .btn-reject:active { opacity: 0.75; }
+
+    /* ── Status badge ───────────────────────────────── */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+    .badge-pending  { background: #fef3c7; color: #d97706; }
+    .badge-approved { background: #d1fae5; color: #065f46; }
+    .badge-rejected { background: #fee2e2; color: #991b1b; }
+
+    /* ── Settings / placeholder pages ──────────────── */
+    .wip-card {
+      text-align: center;
+      padding: 48px 20px;
+    }
+    .wip-icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.35; }
+    .wip-title { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+    .wip-sub { font-size: 0.85rem; color: var(--text-muted); }
+
+    /* ── Page header (for inner pages) ─────────────── */
+    .page-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .page-header-icon {
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      background: var(--accent-gradient);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff;
+      font-size: 1rem;
+    }
+    .page-header-text h2 { font-size: 1rem; font-weight: 700; }
+    .page-header-text p  { font-size: 0.78rem; color: var(--text-muted); }
+
+    /* ── Toast ──────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: calc(var(--nav-height) + 20px);
+      left: 50%; transform: translateX(-50%) translateY(20px);
+      background: #2d3748;
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: 24px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      z-index: 9999;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Bottom navigation ──────────────────────────── */
+    #bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: var(--nav-height);
+      background: #fff;
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.07);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 4px;
+      z-index: 500;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+    }
+    #bottom-nav::-webkit-scrollbar { display: none; }
+
+    .nav-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 6px 10px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: 12px;
+      transition: background 0.15s;
+      font-family: inherit;
+      min-width: 52px;
+      flex-shrink: 0;
+    }
+    .nav-btn i {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      transition: color 0.15s;
+    }
+    .nav-btn span {
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      transition: color 0.15s;
+      white-space: nowrap;
+    }
+    .nav-btn.active i, .nav-btn.active span { color: var(--accent); }
+    .nav-btn.active { background: rgba(102,126,234,0.08); }
+    .nav-btn:active { background: var(--border); }
+
+    /* ── Loader ─────────────────────────────────────── */
+    .loader-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 32px;
+    }
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Salary / Notify / Schedule placeholder ─────── */
+    .feature-form { margin-top: 8px; }
+    .form-row { margin-bottom: 14px; }
+    .form-label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 5px; display: block; }
+    .form-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-family: inherit;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus { border-color: var(--accent); }
+    .btn-primary {
+      width: 100%;
+      padding: 12px;
+      background: var(--accent-gradient);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.15s;
+    }
+    .btn-primary:active { opacity: 0.8; }
+
+    /* ── Responsive ─────────────────────────────────── */
+    @media (min-width: 480px) {
+      .count-grid { grid-template-columns: repeat(4, 1fr); }
+      .quick-actions { grid-template-columns: repeat(4, 1fr); }
+    }
+    @media (min-width: 768px) {
+      body { max-width: 600px; margin: 0 auto; }
+      #bottom-nav { max-width: 600px; left: 50%; transform: translateX(-50%); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <h1 id="header-title">管理後台</h1>
+    <div class="subtitle" id="header-subtitle">載入中…</div>
+  </header>
+
+  <!-- ════════════════════════════════════════════════
+       PAGE: HOME
+  ════════════════════════════════════════════════ -->
+  <div class="page active" id="page-home">
+
+    <div class="welcome-card" id="welcome-card">
+      <div class="welcome-name" id="welcome-name">👋 歡迎</div>
+      <span class="role-chip" id="role-chip"></span>
+    </div>
+
+    <div class="section-title">📋 待審核項目</div>
+    <div class="count-grid">
+      <div class="count-card">
+        <div class="count-label">請假待審核</div>
+        <div class="count-num loading" id="count-leave">…</div>
+      </div>
+      <div class="count-card">
+        <div class="count-label">補卡待審核</div>
+        <div class="count-num loading" id="count-clockfix">…</div>
+      </div>
+      <div class="count-card">
+        <div class="count-label">資料待審核</div>
+        <div class="count-num loading" id="count-upload">…</div>
+      </div>
+      <div class="count-card">
+        <div class="count-label">留言待審核</div>
+        <div class="count-num loading" id="count-message">…</div>
+      </div>
+    </div>
+
+    <div class="section-title">🔔 最新通知</div>
+    <div class="card" id="home-notif-card">
+      <div id="home-notif-list">
+        <div class="empty-state"><i class="fa-regular fa-bell"></i>暫無通知</div>
+      </div>
+    </div>
+
+    <div class="section-title">⚡ 快速操作</div>
+    <div class="quick-actions" id="quick-actions"></div>
+
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       PAGE: LEAVE 請假審核
+  ════════════════════════════════════════════════ -->
+  <div class="page" id="page-leave">
+    <div class="page-header">
+      <div class="page-header-icon"><i class="fa-solid fa-calendar-check"></i></div>
+      <div class="page-header-text">
+        <h2>請假審核</h2>
+        <p>審核員工請假申請</p>
+      </div>
+    </div>
+    <div id="leave-list">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       PAGE: CLOCKFIX 補卡審核
+  ════════════════════════════════════════════════ -->
+  <div class="page" id="page-clockfix">
+    <div class="page-header">
+      <div class="page-header-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+      <div class="page-header-text">
+        <h2>補卡審核</h2>
+        <p>審核員工補打卡申請</p>
+      </div>
+    </div>
+    <div id="clockfix-list">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       PAGE: UPLOAD 資料審核
+  ════════════════════════════════════════════════ -->
+  <div class="page" id="page-upload">
+    <div class="page-header">
+      <div class="page-header-icon"><i class="fa-solid fa-file-circle-check"></i></div>
+      <div class="page-header-text">
+        <h2>資料審核</h2>
+        <p>審核員工上傳資料</p>
+      </div>
+    </div>
+    <div id="upload-list">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       PAGE: MESSAGE 留言審核
+  ════════════════════════════════════════════════ -->
+  <div class="page" id="page-message">
+    <div class="page-header">
+      <div class="page-header-icon"><i class="fa-solid fa-comments"></i></div>
+      <div class="page-header-text">
+        <h2>留言審核</h2>
+        <p>審核員工留言內容</p>
+      </div>
+    </div>
+    <div id="message-list">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       PAGE: SALARY 薪資審核
+  ════════════════════════════════════════════════ -->
+  <div class="page" id="page-salary">
+    <div class="page-header">
+      <div class="page-header-icon"><i class="fa-solid fa-money-check-dollar"></i></div>
+      <div class="page-header-text">
+        <h2>薪資審核</h2>
+        <p>審核員工薪資資訊</p>
+      </div>
+    </div>
+    <div id="salary-list">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       PAGE: NOTIFY 通知管理
+  ════════════════════════════════════════════════ -->
+  <div class="page" id="page-notify">
+    <div class="page-header">
+      <div class="page-header-icon"><i class="fa-solid fa-bell"></i></div>
+      <div class="page-header-text">
+        <h2>通知管理</h2>
+        <p>發送與管理系統通知</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="fa-solid fa-paper-plane"></i>發送通知</div>
+      <div class="feature-form">
+        <div class="form-row">
+          <label class="form-label">通知對象</label>
+          <select class="form-input" id="notify-target">
+            <option value="all">全體員工</option>
+            <option value="dept">指定部門</option>
+            <option value="person">指定個人</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label class="form-label">通知標題</label>
+          <input class="form-input" type="text" id="notify-title" placeholder="請輸入通知標題" />
+        </div>
+        <div class="form-row">
+          <label class="form-label">通知內容</label>
+          <textarea class="form-input" id="notify-content" rows="4" placeholder="請輸入通知內容…" style="resize:none"></textarea>
+        </div>
+        <button class="btn-primary" onclick="sendNotification()"><i class="fa-solid fa-paper-plane"></i>  發送通知</button>
+      </div>
+    </div>
+    <div class="section-title">📋 通知紀錄</div>
+    <div id="notify-history-list">
+      <div class="empty-state"><i class="fa-regular fa-bell-slash"></i>尚無通知紀錄</div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       PAGE: SCHEDULE 排班管理
+  ════════════════════════════════════════════════ -->
+  <div class="page" id="page-schedule">
+    <div class="page-header">
+      <div class="page-header-icon"><i class="fa-solid fa-calendar-days"></i></div>
+      <div class="page-header-text">
+        <h2>排班管理</h2>
+        <p>管理員工班表與排班</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="wip-card">
+        <div class="wip-icon">🗓️</div>
+        <div class="wip-title">排班管理</div>
+        <div class="wip-sub">功能開發中，敬請期待</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       PAGE: DEADLINE 期限設定
+  ════════════════════════════════════════════════ -->
+  <div class="page" id="page-deadline">
+    <div class="page-header">
+      <div class="page-header-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+      <div class="page-header-text">
+        <h2>期限設定</h2>
+        <p>設定各項申請截止期限</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="wip-card">
+        <div class="wip-icon">⏳</div>
+        <div class="wip-title">期限設定</div>
+        <div class="wip-sub">功能開發中，敬請期待</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       PAGE: BRAND 品牌設定
+  ════════════════════════════════════════════════ -->
+  <div class="page" id="page-brand">
+    <div class="page-header">
+      <div class="page-header-icon"><i class="fa-solid fa-palette"></i></div>
+      <div class="page-header-text">
+        <h2>品牌設定</h2>
+        <p>自訂企業品牌視覺</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="wip-card">
+        <div class="wip-icon">🎨</div>
+        <div class="wip-title">品牌設定</div>
+        <div class="wip-sub">功能開發中，敬請期待</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       PAGE: ARCHIVE 歸檔
+  ════════════════════════════════════════════════ -->
+  <div class="page" id="page-archive">
+    <div class="page-header">
+      <div class="page-header-icon"><i class="fa-solid fa-box-archive"></i></div>
+      <div class="page-header-text">
+        <h2>歸檔</h2>
+        <p>查閱與管理歷史資料</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="wip-card">
+        <div class="wip-icon">🗄️</div>
+        <div class="wip-title">歸檔管理</div>
+        <div class="wip-sub">功能開發中，敬請期待</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Bottom Navigation ──────────────────────────── -->
+  <nav id="bottom-nav">
+    <button class="nav-btn active" id="nav-home" onclick="switchPage('home')">
+      <i class="fa-solid fa-house"></i><span>首頁</span>
+    </button>
+    <button class="nav-btn" id="nav-leave" onclick="switchPage('leave')">
+      <i class="fa-solid fa-calendar-check"></i><span>請假</span>
+    </button>
+    <button class="nav-btn" id="nav-clockfix" onclick="switchPage('clockfix')">
+      <i class="fa-solid fa-clock-rotate-left"></i><span>補卡</span>
+    </button>
+    <button class="nav-btn" id="nav-upload" onclick="switchPage('upload')">
+      <i class="fa-solid fa-file-circle-check"></i><span>資料</span>
+    </button>
+    <button class="nav-btn" id="nav-message" onclick="switchPage('message')">
+      <i class="fa-solid fa-comments"></i><span>留言</span>
+    </button>
+    <button class="nav-btn" id="nav-salary" onclick="switchPage('salary')">
+      <i class="fa-solid fa-money-check-dollar"></i><span>薪資</span>
+    </button>
+    <button class="nav-btn" id="nav-notify" onclick="switchPage('notify')">
+      <i class="fa-solid fa-bell"></i><span>通知</span>
+    </button>
+    <button class="nav-btn" id="nav-schedule" onclick="switchPage('schedule')">
+      <i class="fa-solid fa-calendar-days"></i><span>排班</span>
+    </button>
+    <button class="nav-btn" id="nav-deadline" onclick="switchPage('deadline')">
+      <i class="fa-solid fa-hourglass-half"></i><span>期限</span>
+    </button>
+    <button class="nav-btn" id="nav-brand" onclick="switchPage('brand')">
+      <i class="fa-solid fa-palette"></i><span>品牌</span>
+    </button>
+    <button class="nav-btn" id="nav-archive" onclick="switchPage('archive')">
+      <i class="fa-solid fa-box-archive"></i><span>歸檔</span>
+    </button>
+  </nav>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <!-- ══════════════════════════════════════════════════
+       JavaScript
+  ══════════════════════════════════════════════════ -->
+  <script>
+    // ── State ────────────────────────────────────────
+    var adminId   = '';
+    var adminName = '';
+    var adminRole = '';  // '主管' | '人資' | '創辦人'
+
+    // ── Role → pages mapping ─────────────────────────
+    var ROLE_PAGES = {
+      '主管':   ['home', 'leave', 'upload', 'message', 'notify', 'schedule'],
+      '人資':   ['home', 'leave', 'clockfix', 'upload', 'message', 'salary', 'deadline', 'brand', 'archive'],
+      '創辦人': ['home', 'leave', 'clockfix', 'upload', 'message', 'salary', 'notify', 'schedule', 'deadline', 'brand', 'archive']
+    };
+
+    // ── Role → accent color / gradient ───────────────
+    var ROLE_STYLE = {
+      '主管':   { color: '#667eea', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+      '人資':   { color: '#f5576c', gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
+      '創辦人': { color: '#43e97b', gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' }
+    };
+
+    // ── Quick action definitions ──────────────────────
+    var QUICK_DEFS = {
+      leave:    { icon: 'fa-calendar-check',       label: '請假審核' },
+      clockfix: { icon: 'fa-clock-rotate-left',    label: '補卡審核' },
+      upload:   { icon: 'fa-file-circle-check',    label: '資料審核' },
+      message:  { icon: 'fa-comments',             label: '留言審核' },
+      salary:   { icon: 'fa-money-check-dollar',   label: '薪資審核' },
+      notify:   { icon: 'fa-bell',                 label: '通知管理' },
+      schedule: { icon: 'fa-calendar-days',        label: '排班管理' },
+      deadline: { icon: 'fa-hourglass-half',       label: '期限設定' },
+      brand:    { icon: 'fa-palette',              label: '品牌設定' },
+      archive:  { icon: 'fa-box-archive',          label: '歸  檔' }
+    };
+
+    // ── GAS call wrapper ─────────────────────────────
+    function gasCall(params, callback) {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(result) { callback(null, result); })
+          .withFailureHandler(function(err)    { callback(err, null);   })
+          .doPost(params);
+      } else {
+        // Development stub – returns demo data
+        setTimeout(function() { callback(null, stubResponse(params)); }, 600);
+      }
+    }
+
+    // Stub data for development preview
+    function stubResponse(params) {
+      if (params.action === 'getPendingCounts') {
+        return { leave: 3, clockfix: 1, upload: 5, message: 2 };
+      }
+      if (params.action === 'getReviewList') {
+        return [
+          { rowIndex: 2, name: '王小明', date: '2025-06-01', type: '特休', days: 2, reason: '家庭因素', status: '待審核' },
+          { rowIndex: 3, name: '陳美玲', date: '2025-06-03', type: '病假', days: 1, reason: '身體不適', status: '待審核' }
+        ];
+      }
+      if (params.action === 'approve' || params.action === 'reject') {
+        return { success: true };
+      }
+      if (params.action === 'sendNotification') {
+        return { success: true };
+      }
+      return {};
+    }
+
+    // ── URL param helpers ─────────────────────────────
+    function getParam(key) {
+      var q = window.location.search.substring(1);
+      var pairs = q.split('&');
+      for (var i = 0; i < pairs.length; i++) {
+        var kv = pairs[i].split('=');
+        if (decodeURIComponent(kv[0]) === key) {
+          return kv.length > 1 ? decodeURIComponent(kv[1].replace(/\+/g, ' ')) : '';
+        }
+      }
+      return null;
+    }
+
+    // ── Apply role styling ────────────────────────────
+    function applyRoleStyle(role) {
+      var s = ROLE_STYLE[role] || ROLE_STYLE['主管'];
+      document.documentElement.style.setProperty('--accent', s.color);
+      document.documentElement.style.setProperty('--accent-gradient', s.gradient);
+    }
+
+    // ── Init ─────────────────────────────────────────
+    function init() {
+      adminId   = getParam('id')   || 'demo';
+      adminName = getParam('name') || '管理員';
+      adminRole = getParam('role') || '主管';
+
+      // Validate role
+      if (!ROLE_PAGES[adminRole]) adminRole = '主管';
+
+      applyRoleStyle(adminRole);
+
+      // Update header
+      document.getElementById('header-title').textContent = '管理後台';
+      document.getElementById('header-subtitle').textContent = adminName + '・' + adminRole;
+
+      // Update welcome card
+      document.getElementById('welcome-name').textContent = '👋 歡迎，' + adminName;
+      document.getElementById('role-chip').textContent = adminRole;
+
+      // Show/hide nav buttons
+      var allowedPages = ROLE_PAGES[adminRole];
+      var allNavBtns = document.querySelectorAll('#bottom-nav .nav-btn');
+      allNavBtns.forEach(function(btn) {
+        var page = btn.id.replace('nav-', '');
+        btn.style.display = allowedPages.indexOf(page) !== -1 ? '' : 'none';
+      });
+
+      // Build quick actions (exclude 'home')
+      var qa = document.getElementById('quick-actions');
+      qa.innerHTML = '';
+      allowedPages.forEach(function(p) {
+        if (p === 'home') return;
+        var def = QUICK_DEFS[p];
+        if (!def) return;
+        var btn = document.createElement('button');
+        btn.className = 'quick-btn';
+        btn.innerHTML = '<i class="fa-solid ' + def.icon + '"></i><span>' + def.label + '</span>';
+        btn.onclick = (function(page) { return function() { switchPage(page); }; })(p);
+        qa.appendChild(btn);
+      });
+
+      // Load homepage data
+      loadHomepage();
+    }
+
+    // ── Switch page ───────────────────────────────────
+    function switchPage(name) {
+      // Permission check
+      var allowed = ROLE_PAGES[adminRole] || [];
+      if (name !== 'home' && allowed.indexOf(name) === -1) {
+        showToast('您無此功能的存取權限');
+        return;
+      }
+
+      document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+      document.querySelectorAll('#bottom-nav .nav-btn').forEach(function(b) { b.classList.remove('active'); });
+
+      var target = document.getElementById('page-' + name);
+      if (target) target.classList.add('active');
+
+      var navBtn = document.getElementById('nav-' + name);
+      if (navBtn) navBtn.classList.add('active');
+
+      // Lazy-load review lists
+      if (['leave', 'clockfix', 'upload', 'message', 'salary'].indexOf(name) !== -1) {
+        loadReviewList(name);
+      }
+    }
+
+    // ── Load homepage ─────────────────────────────────
+    function loadHomepage() {
+      ['leave', 'clockfix', 'upload', 'message'].forEach(function(k) {
+        var el = document.getElementById('count-' + k);
+        el.textContent = '…';
+        el.className = 'count-num loading';
+      });
+
+      gasCall({ action: 'getPendingCounts' }, function(err, data) {
+        if (err || !data) {
+          ['leave', 'clockfix', 'upload', 'message'].forEach(function(k) {
+            var el = document.getElementById('count-' + k);
+            el.textContent = '-';
+          });
+          return;
+        }
+        var keys = ['leave', 'clockfix', 'upload', 'message'];
+        keys.forEach(function(k) {
+          var el = document.getElementById('count-' + k);
+          var val = data[k] !== undefined ? data[k] : 0;
+          el.textContent = val;
+          el.className = 'count-num' + (val > 0 ? ' loading' : '');
+          if (val > 0) el.style.color = 'var(--accent)';
+          else el.style.color = '#a0aec0';
+        });
+      });
+
+      // Load recent notifications (stub)
+      renderHomeNotifications([
+        { text: '系統已更新至最新版本', time: '剛剛' },
+        { text: '本月薪資計算即將截止', time: '2 小時前' },
+        { text: '3 筆請假申請等待審核', time: '昨天' }
+      ]);
+    }
+
+    function renderHomeNotifications(items) {
+      var container = document.getElementById('home-notif-list');
+      if (!items || items.length === 0) {
+        container.innerHTML = '<div class="empty-state"><i class="fa-regular fa-bell"></i>暫無通知</div>';
+        return;
+      }
+      var icons = ['fa-circle-info', 'fa-triangle-exclamation', 'fa-circle-check'];
+      container.innerHTML = items.slice(0, 3).map(function(n, i) {
+        return '<div class="notif-item">' +
+          '<div class="notif-icon"><i class="fa-solid ' + icons[i % icons.length] + '"></i></div>' +
+          '<div class="notif-body">' +
+            '<div class="notif-text">' + escapeHtml(n.text) + '</div>' +
+            '<div class="notif-time">' + escapeHtml(n.time) + '</div>' +
+          '</div></div>';
+      }).join('');
+    }
+
+    // ── Load review list ──────────────────────────────
+    function loadReviewList(type) {
+      var listId = type + '-list';
+      var container = document.getElementById(listId);
+      if (!container) return;
+      container.innerHTML = '<div class="loader-wrap"><div class="spinner"></div></div>';
+
+      gasCall({ action: 'getReviewList', type: type }, function(err, data) {
+        if (err || !data) {
+          container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-exclamation"></i>載入失敗，請重試</div>';
+          return;
+        }
+        if (data.length === 0) {
+          container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-check"></i>目前無待審核項目</div>';
+          return;
+        }
+        container.innerHTML = data.map(function(item) {
+          return renderReviewCard(type, item);
+        }).join('');
+      });
+    }
+
+    function renderReviewCard(type, item) {
+      var meta = buildMeta(type, item);
+      return '<div class="review-item" id="review-' + type + '-' + item.rowIndex + '">' +
+        '<div class="review-item-header">' +
+          '<span class="review-item-name">' + escapeHtml(item.name || '') + '</span>' +
+          '<span class="badge badge-pending">' + escapeHtml(item.status || '待審核') + '</span>' +
+        '</div>' +
+        '<div class="review-item-date">' + escapeHtml(item.date || '') + '</div>' +
+        '<div class="review-item-meta">' + meta + '</div>' +
+        '<div class="review-actions">' +
+          '<button class="btn-approve" onclick="approveItem(\'' + type + '\',' + item.rowIndex + ')">✓ 核准</button>' +
+          '<button class="btn-reject"  onclick="rejectItem(\'' + type + '\',' + item.rowIndex + ')">✕ 拒絕</button>' +
+        '</div>' +
+      '</div>';
+    }
+
+    function buildMeta(type, item) {
+      if (type === 'leave') {
+        return '假別：' + escapeHtml(item.type || '') + '・天數：' + escapeHtml(String(item.days || '')) + '・原因：' + escapeHtml(item.reason || '');
+      }
+      if (type === 'clockfix') {
+        return '補卡時間：' + escapeHtml(item.time || item.date || '') + '・原因：' + escapeHtml(item.reason || '');
+      }
+      if (type === 'upload') {
+        return '文件類型：' + escapeHtml(item.docType || item.type || '') + '・說明：' + escapeHtml(item.note || '');
+      }
+      if (type === 'message') {
+        return '內容：' + escapeHtml(item.content || item.reason || '');
+      }
+      if (type === 'salary') {
+        return '月份：' + escapeHtml(item.month || '') + '・金額：' + escapeHtml(String(item.amount || ''));
+      }
+      return '';
+    }
+
+    // ── Approve / Reject ──────────────────────────────
+    function approveItem(type, rowIndex) {
+      var card = document.getElementById('review-' + type + '-' + rowIndex);
+      if (card) {
+        var btns = card.querySelectorAll('button');
+        btns.forEach(function(b) { b.disabled = true; });
+      }
+      gasCall({ action: 'approve', type: type, rowIndex: rowIndex, adminId: adminId }, function(err, data) {
+        if (err || !data || !data.success) {
+          showToast('操作失敗，請重試');
+          if (card) card.querySelectorAll('button').forEach(function(b) { b.disabled = false; });
+          return;
+        }
+        if (card) {
+          card.style.opacity = '0.5';
+          var badge = card.querySelector('.badge');
+          if (badge) { badge.textContent = '已核准'; badge.className = 'badge badge-approved'; }
+          card.querySelectorAll('.review-actions').forEach(function(a) { a.remove(); });
+        }
+        showToast('✓ 已核准');
+      });
+    }
+
+    function rejectItem(type, rowIndex) {
+      var card = document.getElementById('review-' + type + '-' + rowIndex);
+      if (card) {
+        var btns = card.querySelectorAll('button');
+        btns.forEach(function(b) { b.disabled = true; });
+      }
+      gasCall({ action: 'reject', type: type, rowIndex: rowIndex, adminId: adminId }, function(err, data) {
+        if (err || !data || !data.success) {
+          showToast('操作失敗，請重試');
+          if (card) card.querySelectorAll('button').forEach(function(b) { b.disabled = false; });
+          return;
+        }
+        if (card) {
+          card.style.opacity = '0.5';
+          var badge = card.querySelector('.badge');
+          if (badge) { badge.textContent = '已拒絕'; badge.className = 'badge badge-rejected'; }
+          card.querySelectorAll('.review-actions').forEach(function(a) { a.remove(); });
+        }
+        showToast('✕ 已拒絕');
+      });
+    }
+
+    // ── Send notification ─────────────────────────────
+    function sendNotification() {
+      var target  = document.getElementById('notify-target').value;
+      var title   = document.getElementById('notify-title').value.trim();
+      var content = document.getElementById('notify-content').value.trim();
+      if (!title || !content) { showToast('請填寫標題與內容'); return; }
+
+      gasCall({ action: 'sendNotification', target: target, title: title, content: content, adminId: adminId }, function(err, data) {
+        if (err || !data || !data.success) { showToast('發送失敗，請重試'); return; }
+        document.getElementById('notify-title').value = '';
+        document.getElementById('notify-content').value = '';
+        showToast('🔔 通知已發送');
+      });
+    }
+
+    // ── Toast ─────────────────────────────────────────
+    function showToast(msg) {
+      var t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(function() { t.classList.remove('show'); }, 2200);
+    }
+
+    // ── Escape HTML ───────────────────────────────────
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // ── Boot ──────────────────────────────────────────
+    init();
+  </script>
+</body>
+</html>
