@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>員工自助系統</title>
+  <style>
+    /* ── Reset & base ─────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+      background: #f0f2f5;
+      color: #333;
+      min-height: 100vh;
+    }
+
+    /* ── Layout ───────────────────────────────────── */
+    .app-header {
+      background: #1a73e8;
+      color: #fff;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.2);
+    }
+    .app-header h1 { font-size: 1.2rem; flex: 1; }
+    .emp-info { font-size: .85rem; opacity: .9; }
+
+    nav {
+      display: flex;
+      gap: 4px;
+      background: #fff;
+      padding: 0 16px;
+      border-bottom: 1px solid #ddd;
+      overflow-x: auto;
+    }
+    nav button {
+      padding: 12px 18px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: .9rem;
+      color: #555;
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+      transition: color .2s, border-color .2s;
+    }
+    nav button.active, nav button:hover {
+      color: #1a73e8;
+      border-bottom-color: #1a73e8;
+    }
+
+    .page { display: none; padding: 20px; max-width: 800px; margin: 0 auto; }
+    .page.active { display: block; }
+
+    /* ── Cards ────────────────────────────────────── */
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.1);
+    }
+    .card h2 {
+      font-size: 1rem;
+      margin-bottom: 14px;
+      color: #1a73e8;
+      border-bottom: 1px solid #e8eaed;
+      padding-bottom: 8px;
+    }
+
+    /* ── Forms ────────────────────────────────────── */
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block;
+      font-size: .85rem;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: .95rem;
+      transition: border-color .2s;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: #1a73e8;
+      outline: none;
+    }
+    .form-group textarea { resize: vertical; min-height: 70px; }
+
+    /* ── Buttons ──────────────────────────────────── */
+    .btn {
+      display: inline-block;
+      padding: 9px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: .95rem;
+      transition: opacity .2s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-primary { background: #1a73e8; color: #fff; }
+    .btn-success { background: #34a853; color: #fff; }
+    .btn-danger  { background: #ea4335; color: #fff; }
+    .btn-outline {
+      background: #fff;
+      color: #1a73e8;
+      border: 1px solid #1a73e8;
+    }
+    .btn-main { background: #1a73e8; color: #fff; border-color: #1a73e8; }
+
+    /* ── Toast ────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #323232;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 24px;
+      font-size: .9rem;
+      opacity: 0;
+      transition: transform .3s, opacity .3s;
+      z-index: 1000;
+      pointer-events: none;
+      max-width: 80vw;
+      text-align: center;
+    }
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ── Clock status ─────────────────────────────── */
+    .clock-status {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .clock-status-item {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 10px 14px;
+      flex: 1;
+      min-width: 120px;
+    }
+    .clock-status-item .label { font-size: .75rem; color: #888; }
+    .clock-status-item .value { font-size: 1rem; font-weight: 600; margin-top: 2px; }
+
+    /* ── Salary card ──────────────────────────────── */
+    .salary-card {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .salary-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: .9rem;
+      padding: 4px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .salary-row:last-child { border-bottom: none; }
+    .salary-total {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #1a73e8;
+    }
+
+    /* BUG 3 FIX: Integrated salary download controls inside the card */
+    .salary-download-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #e8eaed;
+    }
+    .salary-download-group label {
+      font-size: .85rem;
+      color: #666;
+      white-space: nowrap;
+    }
+    .salary-download-group select {
+      flex: 1;
+      min-width: 140px;
+      padding: 7px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: .9rem;
+    }
+
+    /* ── Preselect (選休) ─────────────────────────── */
+    .preselect-hint {
+      font-size: .85rem;
+      color: #555;
+      background: #e8f0fe;
+      border-left: 3px solid #1a73e8;
+      padding: 8px 12px;
+      border-radius: 0 6px 6px 0;
+      margin-bottom: 14px;
+    }
+
+    /*
+     * BUG 4 FIX: Weekday chips represent VACATION days.
+     * Default (inactive) = 上班日 (working day) — light grey.
+     * Active = 休假日 (vacation day) — blue/green highlight.
+     * Labels and ARIA states reflect "selected = vacation".
+     */
+    .weekday-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .weekday-chip {
+      padding: 8px 14px;
+      border-radius: 20px;
+      border: 1.5px solid #ccc;
+      background: #f8f9fa;
+      color: #555;
+      cursor: pointer;
+      font-size: .875rem;
+      user-select: none;
+      transition: background .2s, color .2s, border-color .2s;
+      position: relative;
+    }
+    /* Active chip = 已選為休假日 */
+    .weekday-chip.active {
+      background: #1a73e8;
+      color: #fff;
+      border-color: #1557b0;
+    }
+    .weekday-chip.active::after {
+      content: ' ✕休';
+      font-size: .75rem;
+      opacity: .85;
+    }
+    .weekday-chip:not(.active)::after {
+      content: ' ✓班';
+      font-size: .75rem;
+      opacity: .7;
+    }
+    .weekday-chip:hover:not(.active) {
+      border-color: #1a73e8;
+      color: #1a73e8;
+      background: #e8f0fe;
+    }
+    .chip-legend {
+      display: flex;
+      gap: 16px;
+      font-size: .8rem;
+      color: #666;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .chip-legend span { display: flex; align-items: center; gap: 4px; }
+    .legend-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .legend-dot.work    { background: #f8f9fa; border: 1.5px solid #ccc; }
+    .legend-dot.vacation { background: #1a73e8; }
+
+    /* ── Review cards ─────────────────────────────── */
+    .review-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 10px;
+      background: #fafafa;
+    }
+    .review-card .rc-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #333;
+    }
+    .review-card .rc-desc {
+      font-size: .85rem;
+      color: #555;
+      white-space: pre-line;
+      margin-bottom: 10px;
+    }
+    .review-card .rc-status {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: .8rem;
+      background: #fff3cd;
+      color: #856404;
+      margin-bottom: 8px;
+    }
+    .review-card .rc-actions { display: flex; gap: 8px; }
+
+    /* ── Loading overlay ──────────────────────────── */
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #888;
+      font-size: .9rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-header">
+  <h1>員工自助系統</h1>
+  <div class="emp-info" id="empInfoDisplay"></div>
+</div>
+
+<nav id="mainNav">
+  <button class="active" data-page="clock">打卡</button>
+  <button data-page="clockfix">補打卡</button>
+  <button data-page="leave">請假</button>
+  <button data-page="salary">薪資</button>
+  <button data-page="preselect">選休</button>
+  <button data-page="review" id="reviewTab" style="display:none">審核</button>
+  <button data-page="upload">上傳</button>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════════
+     PAGE: 打卡
+     ══════════════════════════════════════════════════════════ -->
+<div class="page active" id="page-clock">
+  <div class="card">
+    <h2>今日打卡狀態</h2>
+    <div class="clock-status">
+      <div class="clock-status-item">
+        <div class="label">員編</div>
+        <div class="value" id="clockEmpId">—</div>
+      </div>
+      <div class="clock-status-item">
+        <div class="label">上班時間</div>
+        <div class="value" id="clockIn">—</div>
+      </div>
+      <div class="clock-status-item">
+        <div class="label">下班時間</div>
+        <div class="value" id="clockOut">—</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="doClock('上班')">上班打卡</button>
+      <button class="btn btn-outline" onclick="doClock('下班')">下班打卡</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     PAGE: 補打卡
+     ══════════════════════════════════════════════════════════ -->
+<div class="page" id="page-clockfix">
+  <div class="card">
+    <h2>補打卡申請</h2>
+    <div class="form-group">
+      <label>補打卡類型</label>
+      <select id="fixType">
+        <option value="上班">上班打卡</option>
+        <option value="下班">下班打卡</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>補打卡時間</label>
+      <!--
+        BUG 1 context: This datetime-local input gives a value like
+        '2026-04-17T14:00'. The backend (submitEmployeeClockFix) now
+        converts this to '2026/04/17 14:00' before writing to the sheet,
+        preventing the 1899/12/30 misparse by Google Sheets.
+      -->
+      <input type="datetime-local" id="fixTime" />
+    </div>
+    <div class="form-group">
+      <label>事由</label>
+      <textarea id="fixReason" placeholder="請說明補打卡原因…"></textarea>
+    </div>
+    <button class="btn btn-primary" onclick="submitClockFix()">送出申請</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     PAGE: 請假
+     ══════════════════════════════════════════════════════════ -->
+<div class="page" id="page-leave">
+  <div class="card">
+    <h2>請假申請</h2>
+    <div class="form-group">
+      <label>假別</label>
+      <select id="leaveType">
+        <option value="特休">特休</option>
+        <option value="事假">事假</option>
+        <option value="病假">病假</option>
+        <option value="婚假">婚假</option>
+        <option value="喪假">喪假</option>
+        <option value="公假">公假</option>
+        <option value="其他">其他</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>開始日期</label>
+      <input type="date" id="leaveStart" />
+    </div>
+    <div class="form-group">
+      <label>天數</label>
+      <input type="number" id="leaveDays" min="0.5" step="0.5" value="1" />
+    </div>
+    <div class="form-group">
+      <label>事由</label>
+      <textarea id="leaveReason" placeholder="請輸入請假事由…"></textarea>
+    </div>
+    <button class="btn btn-primary" onclick="submitLeave()">送出申請</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     PAGE: 薪資
+     BUG 3 FIX: Only ONE salary card; the download selector and button
+     are integrated directly below the salary details inside the card.
+     The previously redundant standalone salary-history-select block
+     and slipMonth block have been removed.
+     ══════════════════════════════════════════════════════════ -->
+<div class="page" id="page-salary">
+  <div class="card">
+    <h2>薪資預估 / 明細</h2>
+    <div class="salary-card" id="salaryDetail">
+      <div class="loading">載入中…</div>
+    </div>
+
+    <!-- BUG 3 FIX: Integrated download controls (no separate block below) -->
+    <div class="salary-download-group">
+      <label for="salaryMonth">下載薪資單：</label>
+      <select id="salaryMonth">
+        <option value="">— 選擇月份 —</option>
+      </select>
+      <button class="btn btn-outline" onclick="downloadSlip()">下載薪資單</button>
+    </div>
+  </div>
+  <!-- NOTE: No separate salary-history-select or slipMonth block here.
+       Previously there was a duplicated section:
+         <select id="salary-history-select">...</select>
+         <button onclick="downloadSlip()">下載薪資單</button>
+       That has been intentionally removed. -->
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     PAGE: 選休
+     BUG 4 FIX: Chips represent VACATION days (not working days).
+     Active chip = 已選為休假日. Clear legend and hint text.
+     ══════════════════════════════════════════════════════════ -->
+<div class="page" id="page-preselect">
+  <div class="card">
+    <h2>選休設定</h2>
+
+    <!--
+      BUG 4 FIX: Hint text clearly states that clicking a date marks it
+      as a vacation day (休假日), not a working day.
+    -->
+    <div class="preselect-hint">
+      📅 請點選您想要<strong>休假</strong>的日期（可多選）。
+      反白的日期 = 已選為休假日；未選的日期預設為上班日。
+    </div>
+
+    <div class="form-group">
+      <label>選擇月份</label>
+      <input type="month" id="preselectMonth" />
+    </div>
+    <button class="btn btn-outline" style="margin-bottom:14px"
+            onclick="loadPreselectDays()">載入日期</button>
+
+    <!-- BUG 4 FIX: Legend clearly distinguishes vacation vs working day -->
+    <div class="chip-legend">
+      <span>
+        <span class="legend-dot work"></span>✓ 班 = 上班日（預設）
+      </span>
+      <span>
+        <span class="legend-dot vacation"></span>✕ 休 = 休假日（已選）
+      </span>
+    </div>
+
+    <!--
+      BUG 4 FIX: weekday-chip active state = vacation day.
+      The aria-label and aria-pressed attributes reinforce this semantics
+      for accessibility.
+    -->
+    <div class="weekday-grid" id="weekdayGrid">
+      <!-- Chips are rendered by JS after month selection -->
+    </div>
+
+    <div id="preselectSummary" style="font-size:.85rem;color:#555;margin-bottom:14px;"></div>
+
+    <button class="btn btn-success" onclick="savePreselect()">儲存選休設定</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     PAGE: 審核（主管 / 人資）
+     BUG 2 FIX: desc now shows 員編, 姓名, 假別, 開始日期, 天數, 事由
+     because getReviewCards_ uses clean_() for non-date fields.
+     ══════════════════════════════════════════════════════════ -->
+<div class="page" id="page-review">
+  <div class="card">
+    <h2>請假審核</h2>
+    <div id="leaveReviewList"><div class="loading">載入中…</div></div>
+  </div>
+  <div class="card">
+    <h2>補打卡審核</h2>
+    <div id="clockFixReviewList"><div class="loading">載入中…</div></div>
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════════════════════════════
+     PAGE: 上傳
+     ══════════════════════════════════════════════════════════ -->
+<div class="page" id="page-upload">
+  <div class="card">
+    <h2>📎 資料上傳</h2>
+    <!-- Upload type -->
+    <div class="form-group">
+      <label>類型</label>
+      <select id="u-type">
+        <option value="一般">一般上傳</option>
+        <option value="費用請款">費用請款</option>
+        <option value="其他">其他</option>
+      </select>
+    </div>
+    <!-- Location (separate from note) -->
+    <div class="form-group">
+      <label>位置資訊</label>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="u-location" placeholder="點擊「傳送位置資訊」自動填入" readonly style="flex:1;min-width:200px"/>
+        <button class="btn btn-outline" id="btn-location" onclick="getLocation()">📍 傳送位置資訊</button>
+      </div>
+    </div>
+    <!-- Reimbursement section (toggleable) -->
+    <div class="form-group">
+      <button class="btn btn-outline" id="btn-reimburse" onclick="toggleReimbursement()">💰 費用請款</button>
+    </div>
+    <div id="reimburse-panel" style="display:none">
+      <div class="form-group">
+        <label>代墊金額</label>
+        <input type="number" id="r-amount" placeholder="請輸入金額" min="0" step="1"/>
+      </div>
+      <div class="form-group">
+        <label>代墊商品/項目</label>
+        <input type="text" id="r-item" placeholder="請輸入商品或項目名稱"/>
+      </div>
+    </div>
+    <!-- Supplemental note (separate from location) -->
+    <div class="form-group">
+      <label>補充說明</label>
+      <textarea id="u-note" placeholder="其他補充說明（選填）"></textarea>
+    </div>
+    <!-- File attachment -->
+    <div class="form-group">
+      <label>附件</label>
+      <input type="file" id="u-file" accept="image/*,application/pdf"/>
+    </div>
+    <button class="btn btn-primary" onclick="submitUpload()">送出</button>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   Utilities
+   ════════════════════════════════════════════════════════════ */
+/** Zero-pad a number to 2 digits. */
+function pad(n) { return n < 10 ? '0' + n : String(n); }
+
+/* ════════════════════════════════════════════════════════════
+   State
+   ════════════════════════════════════════════════════════════ */
+var empId   = '';
+var empName = '';
+var empRole = '';   // '員工' | '主管' | '人資'
+var empDept = '';
+
+/* ════════════════════════════════════════════════════════════
+   Init
+   ════════════════════════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', function () {
+  // In production, empId/name/role come from GAS session or URL params.
+  // For demo/dev, read from query string: ?emp=E001&name=王小明&role=員工
+  var q = new URLSearchParams(location.search);
+  empId   = q.get('emp')  || 'E001';
+  empName = q.get('name') || '員工';
+  empRole = q.get('role') || '員工';
+  empDept = q.get('dept') || '';
+
+  document.getElementById('empInfoDisplay').textContent =
+    empName + '（' + empId + '）';
+  document.getElementById('clockEmpId').textContent = empId;
+
+  // Show review tab for supervisors / HR
+  if (empRole === '主管' || empRole === '人資') {
+    document.getElementById('reviewTab').style.display = '';
+  }
+
+  // Nav clicks
+  document.querySelectorAll('#mainNav button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      switchPage(btn.dataset.page);
+    });
+  });
+
+  // Pre-fill today's date fields
+  var today = new Date().toISOString().slice(0, 10);
+  var el = document.getElementById('leaveStart');
+  if (el) el.value = today;
+
+  // Default preselect month to current month
+  var monthEl = document.getElementById('preselectMonth');
+  if (monthEl) monthEl.value = new Date().toISOString().slice(0, 7);
+
+  loadSalary();
+});
+
+/* ════════════════════════════════════════════════════════════
+   Navigation
+   ════════════════════════════════════════════════════════════ */
+function switchPage(name) {
+  document.querySelectorAll('.page').forEach(function (p) {
+    p.classList.remove('active');
+  });
+  document.querySelectorAll('#mainNav button').forEach(function (b) {
+    b.classList.remove('active');
+  });
+  var page = document.getElementById('page-' + name);
+  if (page) page.classList.add('active');
+  var btn = document.querySelector('#mainNav button[data-page="' + name + '"]');
+  if (btn) btn.classList.add('active');
+
+  if (name === 'review') loadReviewCards();
+  if (name === 'salary') loadSalary();
+}
+
+/* ════════════════════════════════════════════════════════════
+   Toast helper
+   ════════════════════════════════════════════════════════════ */
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(function () { el.classList.remove('show'); }, 3000);
+}
+
+/* ════════════════════════════════════════════════════════════
+   GAS call helper
+   (In production, replace fetch with google.script.run)
+   ════════════════════════════════════════════════════════════ */
+function gasCall(params, callback) {
+  // When deployed as a GAS Web App, calls go via google.script.run:
+  //   google.script.run.withSuccessHandler(callback)
+  //                    .withFailureHandler(function(e){toast('錯誤：'+e.message)})
+  //                    .doPostProxy(params);
+  //
+  // For local testing, we fall through to a mock or fetch call.
+  if (typeof google !== 'undefined' && google.script && google.script.run) {
+    google.script.run
+      .withSuccessHandler(callback)
+      .withFailureHandler(function (e) { toast('錯誤：' + e.message); })
+      .doPostProxy(JSON.stringify(params));
+  } else {
+    // Dev-mode stub: just log and call back with null
+    console.log('[gasCall stub]', params);
+    callback(null);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   Clock
+   ════════════════════════════════════════════════════════════ */
+function doClock(type) {
+  var now = new Date();
+  var timeStr = pad(now.getHours()) + ':' + pad(now.getMinutes());
+  if (type === '上班') {
+    document.getElementById('clockIn').textContent = timeStr;
+  } else {
+    document.getElementById('clockOut').textContent = timeStr;
+  }
+  gasCall({ action: 'submitClock', empId: empId, type: type,
+            time: now.toISOString() }, function (res) {
+    toast(type + '打卡成功：' + timeStr);
+  });
+}
+
+/* ════════════════════════════════════════════════════════════
+   Clock Fix (補打卡)
+   BUG 1 FIX: timeVal is passed as-is (ISO datetime string).
+   The backend converts it to full 'YYYY/MM/DD HH:mm' before
+   writing to the spreadsheet.
+   ════════════════════════════════════════════════════════════ */
+function submitClockFix() {
+  var type   = document.getElementById('fixType').value;
+  var timeVal = document.getElementById('fixTime').value;  // e.g. '2026-04-17T14:00'
+  var reason = document.getElementById('fixReason').value.trim();
+
+  if (!timeVal) { toast('請選擇補打卡時間'); return; }
+  if (!reason)  { toast('請填寫事由'); return; }
+
+  gasCall({
+    action: 'submitClockFix',
+    empId: empId,
+    timeVal: timeVal,   // full ISO string; backend writes 'YYYY/MM/DD HH:mm'
+    type: type,
+    reason: reason
+  }, function (res) {
+    if (res && res.success) {
+      toast(res.message);
+      document.getElementById('fixReason').value = '';
+      document.getElementById('fixTime').value   = '';
+    } else {
+      toast(res ? res.message : '送出失敗，請重試');
+    }
+  });
+}
+
+/* ════════════════════════════════════════════════════════════
+   Leave
+   ════════════════════════════════════════════════════════════ */
+function submitLeave() {
+  var leaveType = document.getElementById('leaveType').value;
+  var startDate = document.getElementById('leaveStart').value;
+  var days      = document.getElementById('leaveDays').value;
+  var reason    = document.getElementById('leaveReason').value.trim();
+
+  if (!startDate) { toast('請選擇開始日期'); return; }
+  if (!reason)    { toast('請填寫事由'); return; }
+
+  gasCall({
+    action: 'submitLeave',
+    empId: empId,
+    leaveType: leaveType,
+    startDate: startDate,
+    days: days,
+    reason: reason
+  }, function (res) {
+    if (res && res.success) {
+      toast(res.message);
+      document.getElementById('leaveReason').value = '';
+    } else {
+      toast(res ? res.message : '送出失敗，請重試');
+    }
+  });
+}
+
+/* ════════════════════════════════════════════════════════════
+   Salary
+   BUG 3 FIX: Only one salary card with integrated download controls.
+   No separate salary-history-select block.
+   ════════════════════════════════════════════════════════════ */
+function loadSalary() {
+  gasCall({ action: 'getSalaryMonths', empId: empId }, function (res) {
+    var select = document.getElementById('salaryMonth');
+    select.innerHTML = '<option value="">— 選擇月份 —</option>';
+    if (res && res.months) {
+      res.months.forEach(function (m) {
+        var opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = m;
+        select.appendChild(opt);
+      });
+      if (res.months.length > 0) {
+        select.value = res.months[0];
+        loadSalaryDetail(res.months[0]);
+      }
+    } else {
+      document.getElementById('salaryDetail').innerHTML =
+        '<div style="color:#888;font-size:.9rem">目前無薪資記錄</div>';
+    }
+  });
+}
+
+function loadSalaryDetail(month) {
+  if (!month) return;
+  // In production, call backend to get detail for this month
+  gasCall({ action: 'getSalaryDetail', empId: empId, month: month }, function (res) {
+    var el = document.getElementById('salaryDetail');
+    if (!res) {
+      el.innerHTML = '<div style="color:#888;font-size:.9rem">無法載入薪資明細</div>';
+      return;
+    }
+    var rows = [
+      ['月份',     res['月份']    || month],
+      ['底薪',     res['底薪']    || '—'],
+      ['加班費',   res['加班費']  || '—'],
+      ['獎金',     res['獎金']    || '—'],
+      ['勞健保扣除',res['勞健保']  || '—'],
+      ['實發金額', res['實發']    || '—']
+    ];
+    el.innerHTML = rows.map(function (r, i) {
+      var cls = (i === rows.length - 1) ? ' salary-total' : '';
+      return '<div class="salary-row' + cls + '">' +
+             '<span>' + r[0] + '</span><span>' + r[1] + '</span></div>';
+    }).join('');
+  });
+}
+
+function downloadSlip() {
+  var month = document.getElementById('salaryMonth').value;
+  if (!month) { toast('請先選擇月份'); return; }
+  // Trigger download via GAS or a URL
+  toast('準備下載 ' + month + ' 薪資單…');
+  gasCall({ action: 'downloadSlip', empId: empId, month: month }, function (res) {
+    if (res && res.url) {
+      window.open(res.url, '_blank');
+    } else {
+      toast('薪資單下載失敗，請聯繫人資');
+    }
+  });
+}
+
+/* ════════════════════════════════════════════════════════════
+   Pre-select (選休)
+   BUG 4 FIX: Active chip = 休假日 (vacation day).
+   The logic: clicked chips go into vacationDays[].
+   submitPreselect sends vacationDays to backend.
+   Backend sets those days as FALSE (休假), all others TRUE (上班).
+   ════════════════════════════════════════════════════════════ */
+var vacationDays = [];   // dates the employee wants to take off
+
+function loadPreselectDays() {
+  var month = document.getElementById('preselectMonth').value;
+  if (!month) { toast('請選擇月份'); return; }
+
+  var grid = document.getElementById('weekdayGrid');
+  grid.innerHTML = '';
+  vacationDays = [];
+  updatePreselectSummary();
+
+  var parts = month.split('-');
+  var year  = parseInt(parts[0], 10);
+  var mon   = parseInt(parts[1], 10);
+  var daysInMonth = new Date(year, mon, 0).getDate();
+  var weekNames = ['日', '一', '二', '三', '四', '五', '六'];
+
+  for (var d = 1; d <= daysInMonth; d++) {
+    var dateStr = year + '-' + pad(mon) + '-' + pad(d);
+    var dow = new Date(year, mon - 1, d).getDay();
+    var chip = document.createElement('button');
+    chip.className = 'weekday-chip';
+    chip.dataset.date = dateStr;
+    // BUG 4 FIX: Label is the date and day-of-week; no misleading "上班/休假" toggle text.
+    // The chip's active class alone signals "已選為休假日".
+    chip.textContent = pad(d) + '（' + weekNames[dow] + '）';
+    chip.setAttribute('aria-pressed', 'false');
+    chip.setAttribute('aria-label', dateStr + ' 休假日（未選）');
+    chip.title = '點選可將此日設為休假日';
+
+    chip.addEventListener('click', function () { toggleVacationDay(this); });
+    grid.appendChild(chip);
+  }
+
+  toast('已載入 ' + month + ' 共 ' + daysInMonth + ' 天，請點選休假日');
+}
+
+/**
+ * BUG 4 FIX: Toggle a chip's vacation state.
+ * Active = 休假日; inactive = 上班日.
+ */
+function toggleVacationDay(chip) {
+  var date = chip.dataset.date;
+  var idx  = vacationDays.indexOf(date);
+  if (idx === -1) {
+    // Not yet selected → mark as 休假日
+    vacationDays.push(date);
+    chip.classList.add('active');
+    chip.setAttribute('aria-pressed', 'true');
+    chip.setAttribute('aria-label', date + ' 休假日（已選）');
+    chip.title = '已選為休假日，再次點選可取消';
+  } else {
+    // Already selected → revert to 上班日
+    vacationDays.splice(idx, 1);
+    chip.classList.remove('active');
+    chip.setAttribute('aria-pressed', 'false');
+    chip.setAttribute('aria-label', date + ' 休假日（未選）');
+    chip.title = '點選可將此日設為休假日';
+  }
+  updatePreselectSummary();
+}
+
+function updatePreselectSummary() {
+  var el = document.getElementById('preselectSummary');
+  if (vacationDays.length === 0) {
+    el.textContent = '目前未選任何休假日';
+  } else {
+    el.textContent = '已選 ' + vacationDays.length + ' 個休假日：' +
+                     vacationDays.slice().sort().join('、');
+  }
+}
+
+function savePreselect() {
+  var month = document.getElementById('preselectMonth').value;
+  if (!month) { toast('請先選擇月份並載入日期'); return; }
+
+  gasCall({
+    action: 'submitPreselect',
+    empId: empId,
+    yearMonth: month,
+    vacationDays: vacationDays   // dates to be set as 休假 (FALSE in sheet)
+  }, function (res) {
+    if (res && res.success) {
+      toast(res.message);
+    } else {
+      toast(res ? res.message : '儲存失敗，請重試');
+    }
+  });
+}
+
+/* ════════════════════════════════════════════════════════════
+   Review cards
+   BUG 2 FIX: Backend now uses clean_() for non-date fields, so
+   desc will include 員編, 姓名, 假別, 天數, 事由, etc.
+   ════════════════════════════════════════════════════════════ */
+function loadReviewCards() {
+  ['leaveReviewList', 'clockFixReviewList'].forEach(function (id) {
+    document.getElementById(id).innerHTML =
+      '<div class="loading">載入中…</div>';
+  });
+
+  gasCall({ action: 'getReviewCards', role: empRole, dept: empDept },
+    function (res) {
+      if (!res) {
+        document.getElementById('leaveReviewList').innerHTML =
+          '<div style="color:#888">無法載入審核資料</div>';
+        document.getElementById('clockFixReviewList').innerHTML = '';
+        return;
+      }
+      renderReviewCards('leaveReviewList',    res.leaveCards,    'leave');
+      renderReviewCards('clockFixReviewList', res.clockFixCards, 'clockfix');
+    }
+  );
+}
+
+function renderReviewCards(containerId, cards, type) {
+  var el = document.getElementById(containerId);
+  if (!cards || cards.length === 0) {
+    el.innerHTML = '<div style="color:#888;font-size:.9rem">目前沒有待審核項目</div>';
+    return;
+  }
+  el.innerHTML = cards.map(function (c) {
+    return '<div class="review-card">' +
+      '<div class="rc-title">' + escHtml(c.title) + '</div>' +
+      '<span class="rc-status">' + escHtml(c.status) + '</span>' +
+      // BUG 2 FIX: desc now contains full info (假別, 姓名, 天數, 事由...)
+      '<div class="rc-desc">' + escHtml(c.desc) + '</div>' +
+      '<div class="rc-actions">' +
+        '<button class="btn btn-success" style="font-size:.85rem;padding:6px 14px" ' +
+          'onclick="doReview(\'' + type + '\',' + c.rowIndex + ',\'核准\')">核准</button>' +
+        '<button class="btn btn-danger" style="font-size:.85rem;padding:6px 14px" ' +
+          'onclick="doReview(\'' + type + '\',' + c.rowIndex + ',\'拒絕\')">拒絕</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function doReview(type, rowIndex, decision) {
+  var comment = decision === '拒絕'
+    ? (prompt('請輸入拒絕原因（可留空）：') || '')
+    : '';
+  var action = type === 'leave' ? 'reviewLeave' : 'reviewClockFix';
+  gasCall({ action: action, rowIndex: rowIndex, decision: decision, comment: comment },
+    function (res) {
+      if (res && res.success) {
+        toast(decision + '成功');
+        loadReviewCards();
+      } else {
+        toast(res ? res.message : '審核操作失敗');
+      }
+    }
+  );
+}
+
+/* ════════════════════════════════════════════════════════════
+   Upload (上傳)
+   ════════════════════════════════════════════════════════════ */
+var locationAcquired = false;
+var reimburseExpanded = false;
+
+function getLocation() {
+  if (!navigator.geolocation) { toast('瀏覽器不支援定位'); return; }
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    var lat = pos.coords.latitude.toFixed(6);
+    var lng = pos.coords.longitude.toFixed(6);
+    document.getElementById('u-location').value = lat + ',' + lng;
+    locationAcquired = true;
+    var btn = document.getElementById('btn-location');
+    btn.classList.add('btn-main');
+    btn.textContent = '✅ 位置已取得';
+  }, function() {
+    toast('無法取得位置，請允許定位權限');
+  });
+}
+
+function toggleReimbursement() {
+  reimburseExpanded = !reimburseExpanded;
+  var panel = document.getElementById('reimburse-panel');
+  var btn = document.getElementById('btn-reimburse');
+  panel.style.display = reimburseExpanded ? 'block' : 'none';
+  if (reimburseExpanded) {
+    btn.classList.add('btn-main');
+    btn.textContent = '💰 費用請款（展開中）';
+  } else {
+    btn.classList.remove('btn-main');
+    btn.textContent = '💰 費用請款';
+  }
+}
+
+function submitUpload() {
+  var type = document.getElementById('u-type').value;
+  var note = document.getElementById('u-note').value.trim();
+  var location = document.getElementById('u-location').value.trim();
+  var amount = document.getElementById('r-amount') ? document.getElementById('r-amount').value : '';
+  var item = document.getElementById('r-item') ? document.getElementById('r-item').value.trim() : '';
+  var fileInput = document.getElementById('u-file');
+
+  var doSend = function(fileName, fileMime, fileData) {
+    gasCall({
+      action: 'submitUpload',
+      empId: empId,
+      type: type,
+      note: note,
+      amount: amount,
+      item: item,
+      location: location,
+      fileName: fileName,
+      fileMime: fileMime,
+      fileData: fileData
+    }, function(res) {
+      if (res && res.success) {
+        toast(res.message || '上傳成功');
+        // Reset button states
+        locationAcquired = false;
+        reimburseExpanded = false;
+        var btnLoc = document.getElementById('btn-location');
+        btnLoc.classList.remove('btn-main');
+        btnLoc.textContent = '📍 傳送位置資訊';
+        var btnRe = document.getElementById('btn-reimburse');
+        btnRe.classList.remove('btn-main');
+        btnRe.textContent = '💰 費用請款';
+        document.getElementById('reimburse-panel').style.display = 'none';
+        // Reset form fields
+        document.getElementById('u-note').value = '';
+        document.getElementById('u-location').value = '';
+        if (document.getElementById('r-amount')) document.getElementById('r-amount').value = '';
+        if (document.getElementById('r-item')) document.getElementById('r-item').value = '';
+        document.getElementById('u-file').value = '';
+      } else {
+        toast(res ? res.message : '上傳失敗，請重試');
+      }
+    });
+  };
+
+  if (fileInput.files.length > 0) {
+    var file = fileInput.files[0];
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var dataUrl = e.target.result;
+      var comma = dataUrl.indexOf(',');
+      doSend(file.name, file.type, dataUrl.slice(comma + 1));
+    };
+    reader.readAsDataURL(file);
+  } else {
+    doSend('', '', '');
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   Utilities
+   ════════════════════════════════════════════════════════════ */
+function escHtml(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>
