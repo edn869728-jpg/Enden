@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HR 系統</title>
+  <style>
+    /* ── CSS Variables / Theme ─────────────────────────────────────── */
+    :root {
+      --primary: #4A90D9;
+      --primary-dark: #357ABD;
+      --primary-light: #E8F2FB;
+      --active-btn: var(--primary);
+      --bg: #F5F7FA;
+      --surface: #FFFFFF;
+      --border: #E0E4EA;
+      --text: #333;
+      --text-muted: #888;
+      --danger: #E74C3C;
+      --success: #27AE60;
+      --warning: #F39C12;
+      --radius: 10px;
+      --shadow: 0 2px 8px rgba(0,0,0,.08);
+    }
+
+    /* ── Reset & Base ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: var(--radius);
+      padding: 8px 16px;
+      font-size: 14px;
+      transition: background .2s, transform .1s, opacity .2s;
+    }
+    button:active { transform: scale(.97); }
+    input, select, textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 14px;
+      background: var(--surface);
+      color: var(--text);
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: -1px;
+    }
+    label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
+    .form-group { margin-bottom: 14px; }
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid var(--primary);
+      color: var(--primary);
+    }
+    .btn-outline:hover { background: var(--primary-light); }
+
+    /* Active state for toggle buttons (location / expense) */
+    .btn-toggle.is-active {
+      background: var(--active-btn) !important;
+      color: #fff !important;
+      border-color: var(--active-btn) !important;
+    }
+
+    /* ── App Shell ────────────────────────────────────────────────── */
+    #app { display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* ── Top Bar ──────────────────────────────────────────────────── */
+    #topbar {
+      background: var(--primary);
+      color: #fff;
+      padding: 0 16px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 6px rgba(0,0,0,.15);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    #topbar .title { font-size: 18px; font-weight: 600; }
+    #topbar .user-info { font-size: 13px; opacity: .9; }
+
+    /* ── Bottom Navigation ────────────────────────────────────────── */
+    #bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 100;
+    }
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 4px;
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: color .2s;
+    }
+    .nav-item .icon { font-size: 22px; margin-bottom: 2px; }
+    .nav-item.active { color: var(--primary); }
+
+    /* ── Page Container ────────────────────────────────────────────── */
+    #content { padding: 16px; padding-bottom: 72px; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ── Home Page ────────────────────────────────────────────────── */
+    .greeting { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .greeting-sub { font-size: 14px; color: var(--text-muted); }
+    .status-row {
+      display: flex;
+      gap: 10px;
+      margin: 12px 0;
+    }
+    .status-chip {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .status-chip.on-duty  { background: #D5F0DF; color: #1D7A3C; }
+    .status-chip.off-duty { background: #F0E0D5; color: #7A3C1D; }
+    .status-chip.rest     { background: #D5E5F0; color: #1D4A7A; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 12px 0;
+    }
+    .stat-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+    .stat-label { font-size: 12px; color: var(--text-muted); }
+    .stat-value { font-size: 22px; font-weight: 700; color: var(--primary); margin-top: 4px; }
+    .stat-unit  { font-size: 12px; color: var(--text-muted); }
+
+    .section-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 18px 0 8px;
+    }
+
+    .notif-item {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      box-shadow: var(--shadow);
+      border-left: 4px solid var(--primary);
+    }
+    .notif-item.warning { border-left-color: var(--warning); }
+    .notif-item.danger  { border-left-color: var(--danger); }
+    .notif-title { font-size: 14px; font-weight: 600; }
+    .notif-content { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+    .notif-date { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+
+    .message-input-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .message-input-row input { flex: 1; }
+
+    /* Theme color picker */
+    .theme-swatches {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .swatch {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: transform .15s, border-color .15s;
+    }
+    .swatch.selected { border-color: #fff; box-shadow: 0 0 0 2px var(--text); }
+    .swatch:hover { transform: scale(1.15); }
+
+    /* ── Schedule Page ────────────────────────────────────────────── */
+    .schedule-header {
+      background: var(--primary-light);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+    .schedule-header p { font-size: 14px; color: var(--primary-dark); line-height: 1.5; }
+
+    .period-select-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .period-select-row select { flex: 1; }
+
+    .date-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    .date-chip {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      cursor: pointer;
+      font-size: 13px;
+      user-select: none;
+      transition: background .15s, color .15s, border-color .15s;
+    }
+    .date-chip .day-label { font-size: 10px; color: var(--text-muted); }
+    /* Selected = wants vacation (highlighted in theme color) */
+    .date-chip.vacation-selected {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .date-chip.vacation-selected .day-label { color: rgba(255,255,255,.8); }
+    .date-chip.past {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+    .legend {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    /* ── Salary Page ──────────────────────────────────────────────── */
+    /* Single row: dropdown + download button */
+    .salary-select-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .salary-select-row select { flex: 1; }
+    .salary-select-row button { white-space: nowrap; flex-shrink: 0; }
+
+    .salary-detail-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+    .salary-detail-card .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .salary-detail-card .detail-row:last-child { border-bottom: none; font-weight: 700; }
+    .salary-detail-card .amount-pos { color: var(--success); }
+    .salary-detail-card .amount-neg { color: var(--danger); }
+
+    /* ── Upload / Request Page ────────────────────────────────────── */
+    .request-type-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .type-chip {
+      padding: 7px 14px;
+      border-radius: 20px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      font-size: 13px;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+    .type-chip.selected {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    /* Extra fields revealed when "expense" type is chosen */
+    #expense-fields { display: none; margin-top: 10px; }
+    #expense-fields.shown { display: block; }
+
+    /* Location row */
+    .location-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+    .location-row input { flex: 1; }
+    #btn-get-location {
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* ── Admin / Role Tabs ─────────────────────────────────────────── */
+    .role-tabs {
+      display: flex;
+      overflow-x: auto;
+      gap: 4px;
+      margin-bottom: 14px;
+      padding-bottom: 2px;
+    }
+    .role-tab {
+      padding: 7px 16px;
+      border-radius: 20px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .15s, color .15s;
+    }
+    .role-tab.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .role-panel { display: none; }
+    .role-panel.active { display: block; }
+
+    .function-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .function-card .fc-title { font-size: 15px; font-weight: 600; }
+    .function-card .fc-desc  { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+    .function-card button    { flex-shrink: 0; margin-left: 12px; }
+
+    /* ── Toast / Snackbar ─────────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(0,0,0,.8);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 24px;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity .3s, transform .3s;
+      pointer-events: none;
+      z-index: 200;
+      white-space: nowrap;
+    }
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ── Loading overlay ──────────────────────────────────────────── */
+    #loading-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,.6);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+    }
+    #loading-overlay.show { display: flex; }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Responsive tweaks ────────────────────────────────────────── */
+    @media (min-width: 600px) {
+      #content { max-width: 600px; margin: 0 auto; }
+      #bottom-nav { max-width: 600px; left: 50%; transform: translateX(-50%); }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Top Bar ──────────────────────────────────────────────────── -->
+  <div id="topbar">
+    <span class="title">HR 系統</span>
+    <span class="user-info" id="topbar-user">載入中…</span>
+  </div>
+
+  <!-- ── Content ──────────────────────────────────────────────────── -->
+  <div id="content">
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         PAGE: 首頁 (HOME) — shown for ALL roles (employee + admin)
+         Displays personal info, status, stats, notifications, etc.
+    ═══════════════════════════════════════════════════════════════ -->
+    <div id="page-home" class="page active">
+      <div class="greeting" id="home-greeting">嗨，同仁！</div>
+      <div class="greeting-sub" id="home-date"></div>
+
+      <!-- Today status -->
+      <div class="status-row">
+        <span class="status-chip" id="chip-today-status">載入中…</span>
+        <span class="status-chip rest" id="chip-tomorrow-shift">明日：—</span>
+      </div>
+
+      <!-- This week / This month stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">本週工時</div>
+          <div class="stat-value" id="stat-week-hours">—</div>
+          <div class="stat-unit">小時</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">本週薪資</div>
+          <div class="stat-value" id="stat-week-pay">—</div>
+          <div class="stat-unit">元</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">本月工時</div>
+          <div class="stat-value" id="stat-month-hours">—</div>
+          <div class="stat-unit">小時</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">本月薪資</div>
+          <div class="stat-value" id="stat-month-pay">—</div>
+          <div class="stat-unit">元</div>
+        </div>
+      </div>
+
+      <!-- Reminders & supervisor notices -->
+      <div class="section-title">📋 提醒與通知</div>
+      <div id="notif-list"><p style="color:var(--text-muted);font-size:14px">載入中…</p></div>
+
+      <!-- Message board -->
+      <div class="section-title">💬 留言交流</div>
+      <div id="message-list" style="max-height:200px;overflow-y:auto;margin-bottom:8px"></div>
+      <div class="message-input-row">
+        <input id="msg-input" placeholder="輸入留言…">
+        <button class="btn-primary" onclick="postMessage()">送出</button>
+      </div>
+
+      <!-- Theme color settings -->
+      <div class="section-title">🎨 主題顏色</div>
+      <div class="theme-swatches" id="theme-swatches">
+        <div class="swatch selected" style="background:#4A90D9" data-color="#4A90D9" onclick="setTheme(this)"></div>
+        <div class="swatch" style="background:#27AE60" data-color="#27AE60" onclick="setTheme(this)"></div>
+        <div class="swatch" style="background:#8E44AD" data-color="#8E44AD" onclick="setTheme(this)"></div>
+        <div class="swatch" style="background:#E67E22" data-color="#E67E22" onclick="setTheme(this)"></div>
+        <div class="swatch" style="background:#E74C3C" data-color="#E74C3C" onclick="setTheme(this)"></div>
+        <div class="swatch" style="background:#16A085" data-color="#16A085" onclick="setTheme(this)"></div>
+        <div class="swatch" style="background:#2C3E50" data-color="#2C3E50" onclick="setTheme(this)"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         PAGE: 排班 (SCHEDULE) — Vacation pre-selection
+    ═══════════════════════════════════════════════════════════════ -->
+    <div id="page-schedule" class="page">
+      <!-- Instruction: make clear that selected dates = vacation days -->
+      <div class="schedule-header">
+        <strong>選擇您要休假的日期</strong>
+        <p>
+          點選日期 = 申請休假 🏖️<br>
+          未點選的日期視為正常出勤。<br>
+          選好後請按「送出休假申請」確認。
+        </p>
+      </div>
+
+      <!-- Period selector -->
+      <div class="period-select-row">
+        <select id="preselect-period" onchange="loadSchedulePeriod()">
+          <option value="">— 選擇排班週期 —</option>
+        </select>
+      </div>
+
+      <!-- Weekday header row -->
+      <div class="date-grid" id="weekday-header">
+        <div style="text-align:center;font-size:12px;font-weight:600;color:var(--text-muted)">日</div>
+        <div style="text-align:center;font-size:12px;font-weight:600;color:var(--text-muted)">一</div>
+        <div style="text-align:center;font-size:12px;font-weight:600;color:var(--text-muted)">二</div>
+        <div style="text-align:center;font-size:12px;font-weight:600;color:var(--text-muted)">三</div>
+        <div style="text-align:center;font-size:12px;font-weight:600;color:var(--text-muted)">四</div>
+        <div style="text-align:center;font-size:12px;font-weight:600;color:var(--text-muted)">五</div>
+        <div style="text-align:center;font-size:12px;font-weight:600;color:var(--text-muted)">六</div>
+      </div>
+
+      <!-- Date chips generated by JS -->
+      <div class="date-grid" id="date-grid"></div>
+
+      <!-- Legend -->
+      <div class="legend">
+        <span><span class="legend-dot" style="background:var(--primary)"></span>已選（休假）</span>
+        <span><span class="legend-dot" style="background:var(--surface);border:1.5px solid var(--border)"></span>未選（出勤）</span>
+        <span><span class="legend-dot" style="background:var(--border)"></span>已過期</span>
+      </div>
+
+      <!-- Selected summary -->
+      <div class="card" style="margin-bottom:12px">
+        <div style="font-size:14px">已選休假日期：<strong id="vacation-count">0</strong> 天</div>
+        <div id="vacation-date-list" style="font-size:13px;color:var(--text-muted);margin-top:6px"></div>
+      </div>
+
+      <button class="btn-primary" style="width:100%;padding:12px" onclick="confirmScheduleSelection()">
+        ✅ 送出休假申請
+      </button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         PAGE: 薪資 (SALARY)
+         MERGED: single dropdown + download button (no duplicate section)
+         Supports weekly / monthly pay periods.
+    ═══════════════════════════════════════════════════════════════ -->
+    <div id="page-salary" class="page">
+      <div class="section-title" style="margin-top:0">已發薪資</div>
+
+      <!--
+        MERGED SECTION:
+        Previously there were two separate areas:
+          1. #salary-history-select  (已發薪資 dropdown)
+          2. #slipMonth + download button (選擇月份 + 下載薪資單)
+        Now unified into a single row: select the record and download from here.
+        Both weekly ("2026 第15週") and monthly ("2026年04月") labels are supported.
+      -->
+      <div class="salary-select-row">
+        <select id="salary-history-select" onchange="onSalarySelectChange()">
+          <option value="">— 選擇已發薪資 —</option>
+        </select>
+        <button class="btn-primary" id="btn-download-slip" onclick="downloadSalarySlip()" disabled>
+          ⬇ 下載薪資單
+        </button>
+      </div>
+
+      <!-- Salary detail card (shown after selecting a period) -->
+      <div id="salary-detail-wrap" style="display:none">
+        <div class="salary-detail-card">
+          <div class="detail-row"><span>薪資週期</span><span id="sd-period">—</span></div>
+          <div class="detail-row"><span>底薪</span><span class="amount-pos" id="sd-base">—</span></div>
+          <div class="detail-row"><span>加班費</span><span class="amount-pos" id="sd-ot">—</span></div>
+          <div class="detail-row"><span>獎金</span><span class="amount-pos" id="sd-bonus">—</span></div>
+          <div class="detail-row"><span>扣款</span><span class="amount-neg" id="sd-ded">—</span></div>
+          <div class="detail-row"><span>工時</span><span id="sd-hours">—</span></div>
+          <div class="detail-row"><span>實領金額</span><span class="amount-pos" id="sd-total">—</span></div>
+        </div>
+      </div>
+
+      <p id="salary-empty" style="color:var(--text-muted);font-size:14px;text-align:center;margin-top:32px">
+        請先選擇薪資週期。
+      </p>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         PAGE: 申請 (UPLOAD / REQUEST)
+         Separate fields for: location (I), amount (G), item (H)
+         Button active-state color change for location & expense toggles.
+    ═══════════════════════════════════════════════════════════════ -->
+    <div id="page-upload" class="page">
+      <div class="section-title" style="margin-top:0">提交申請</div>
+
+      <!-- Request type chips -->
+      <div class="request-type-row" id="request-type-row">
+        <div class="type-chip selected" data-type="一般" onclick="selectRequestType(this)">一般申請</div>
+        <div class="type-chip" data-type="請假" onclick="selectRequestType(this)">請假</div>
+        <div class="type-chip" data-type="補打卡" onclick="selectRequestType(this)">補打卡</div>
+        <div class="type-chip" data-type="費用請款" onclick="selectRequestType(this)">費用請款</div>
+        <div class="type-chip" data-type="其他" onclick="selectRequestType(this)">其他</div>
+      </div>
+
+      <div class="card">
+        <div class="form-group">
+          <label>申請主旨</label>
+          <input id="u-title" placeholder="請輸入申請主旨…">
+        </div>
+
+        <div class="form-group">
+          <label>補充說明</label>
+          <textarea id="u-note" rows="3" placeholder="補充說明（選填）"></textarea>
+        </div>
+
+        <!--
+          LOCATION SECTION (位置資訊)
+          Stored separately in column I — NOT mixed into note.
+          Button changes to theme color (active) when location is obtained.
+        -->
+        <div class="form-group">
+          <label>位置資訊</label>
+          <div class="location-row">
+            <input id="u-location" placeholder="地址或座標（選填）" readonly>
+            <!--
+              btn-toggle + is-active class = active state = theme color
+              This gives visual feedback that location has been captured.
+            -->
+            <button id="btn-get-location"
+                    class="btn-outline btn-toggle"
+                    onclick="getLocation()">
+              📍 傳送位置資訊
+            </button>
+          </div>
+        </div>
+
+        <!--
+          EXPENSE FIELDS (費用請款)
+          Visible when type = "費用請款".
+          Amount stored in column G, item in column H — NOT in note.
+          The "費用請款" type-chip already acts as toggle button;
+          it turns theme-color when selected via selectRequestType().
+        -->
+        <div id="expense-fields">
+          <div class="form-group">
+            <label>代墊金額（元）</label>
+            <input id="u-amount" type="number" min="0" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label>代墊商品 / 說明</label>
+            <input id="u-item" placeholder="購買項目名稱…">
+          </div>
+        </div>
+
+        <!-- Clock-fix fields (visible when type = 補打卡) -->
+        <div id="clockfix-fields" style="display:none">
+          <div class="form-group">
+            <label>補打卡日期</label>
+            <input id="u-cf-date" type="date">
+          </div>
+          <div class="form-group">
+            <label>補打卡時間</label>
+            <input id="u-cf-time" type="time">
+          </div>
+          <div class="form-group">
+            <label>類型</label>
+            <select id="u-cf-type">
+              <option value="in">上班打卡</option>
+              <option value="out">下班打卡</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn-primary" style="width:100%;padding:12px;margin-top:4px"
+                onclick="submitRequest()">
+          送出申請
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         PAGE: 管理 (ADMIN)
+         Homepage content = same as employee home (greeting, stats, etc.)
+         Admin-specific functions live in ROLE TABS, not as the first thing shown.
+
+         Role-tab structure (no overlap between roles):
+           • Manager tab  — employee mgmt, schedule approval, leave approval
+           • Admin tab    — salary mgmt, payroll settings  (NOT employee mgmt)
+           • Creator tab  — data export, system config     (NOT salary/employee)
+    ═══════════════════════════════════════════════════════════════ -->
+    <div id="page-admin" class="page">
+      <!--
+        ADMIN HOME = same layout as employee home.
+        Greeting, status chips, stats, notifications, messages, theme picker
+        are all rendered here — admin is a person too and sees their own data.
+      -->
+      <div class="greeting" id="admin-greeting">嗨，管理員！</div>
+      <div class="greeting-sub" id="admin-date"></div>
+
+      <div class="status-row">
+        <span class="status-chip" id="admin-chip-status">載入中…</span>
+        <span class="status-chip rest" id="admin-chip-tomorrow">明日：—</span>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">本週工時</div>
+          <div class="stat-value" id="admin-stat-wh">—</div>
+          <div class="stat-unit">小時</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">本週薪資</div>
+          <div class="stat-value" id="admin-stat-wp">—</div>
+          <div class="stat-unit">元</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">本月工時</div>
+          <div class="stat-value" id="admin-stat-mh">—</div>
+          <div class="stat-unit">小時</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">本月薪資</div>
+          <div class="stat-value" id="admin-stat-mp">—</div>
+          <div class="stat-unit">元</div>
+        </div>
+      </div>
+
+      <div class="section-title">📋 提醒與通知</div>
+      <div id="admin-notif-list"></div>
+
+      <!-- ─────────────────────────────────────────────────────────
+           ADMIN FUNCTION TABS
+           Each role tab shows ONLY that role's unique features.
+           Manager tab  → employee / schedule / leave management
+           Admin tab    → salary / payroll settings  (no employee mgmt)
+           Creator tab  → export / system config      (no salary or employee)
+      ──────────────────────────────────────────────────────────── -->
+      <div class="section-title">⚙️ 管理功能</div>
+
+      <!-- Role tabs — only show tabs the current user has access to -->
+      <div class="role-tabs" id="role-tabs">
+        <!-- tabs inserted by JS based on user role -->
+      </div>
+
+      <!-- ── Manager panel (only shown for manager role) ── -->
+      <div class="role-panel" id="panel-manager">
+        <!-- Employee management (manager-only) -->
+        <div class="function-card">
+          <div>
+            <div class="fc-title">👥 員工管理</div>
+            <div class="fc-desc">新增、編輯、停用員工帳號</div>
+          </div>
+          <button class="btn-primary" onclick="openFunction('employeeManagement')">開啟</button>
+        </div>
+        <!-- Schedule approval (manager-only) -->
+        <div class="function-card">
+          <div>
+            <div class="fc-title">📅 排班審核</div>
+            <div class="fc-desc">審核員工預選排班及休假申請</div>
+          </div>
+          <button class="btn-primary" onclick="openFunction('scheduleReview')">開啟</button>
+        </div>
+        <!-- Leave approval (manager-only) -->
+        <div class="function-card">
+          <div>
+            <div class="fc-title">🗓 請假審核</div>
+            <div class="fc-desc">審核待核准的請假申請</div>
+          </div>
+          <button class="btn-primary" id="btn-leave-review" onclick="openFunction('leaveReview')">
+            開啟
+          </button>
+        </div>
+        <!-- Attendance records (manager-only) -->
+        <div class="function-card">
+          <div>
+            <div class="fc-title">🕐 出缺勤記錄</div>
+            <div class="fc-desc">查看全體員工出勤狀況</div>
+          </div>
+          <button class="btn-outline" onclick="openFunction('attendance')">查看</button>
+        </div>
+      </div>
+
+      <!-- ── Admin panel (only shown for admin role; NO duplicate of manager) ── -->
+      <div class="role-panel" id="panel-admin">
+        <!-- Salary management (admin-only, NOT available to manager) -->
+        <div class="function-card">
+          <div>
+            <div class="fc-title">💰 薪資管理</div>
+            <div class="fc-desc">設定薪資結構、發薪、查看薪資報表</div>
+          </div>
+          <button class="btn-primary" onclick="openFunction('salaryManagement')">開啟</button>
+        </div>
+        <!-- Payroll settings (admin-only) -->
+        <div class="function-card">
+          <div>
+            <div class="fc-title">📊 薪資週期設定</div>
+            <div class="fc-desc">切換月結 / 週結模式</div>
+          </div>
+          <button class="btn-outline" onclick="openFunction('payrollSettings')">設定</button>
+        </div>
+        <!-- Expense claims review (admin-only) -->
+        <div class="function-card">
+          <div>
+            <div class="fc-title">🧾 費用請款審核</div>
+            <div class="fc-desc">審核員工費用請款申請</div>
+          </div>
+          <button class="btn-primary" onclick="openFunction('expenseReview')">開啟</button>
+        </div>
+        <!-- Announcements (admin-only) -->
+        <div class="function-card">
+          <div>
+            <div class="fc-title">📢 公告管理</div>
+            <div class="fc-desc">發布全員通知與主管公告</div>
+          </div>
+          <button class="btn-outline" onclick="openFunction('announcements')">管理</button>
+        </div>
+      </div>
+
+      <!-- ── Creator panel (only shown for creator role; NO duplicate of manager/admin) ── -->
+      <div class="role-panel" id="panel-creator">
+        <!-- Data export (creator-only) -->
+        <div class="function-card">
+          <div>
+            <div class="fc-title">📤 資料匯出</div>
+            <div class="fc-desc">匯出員工資料、薪資報表至試算表</div>
+          </div>
+          <button class="btn-primary" onclick="openFunction('dataExport')">匯出</button>
+        </div>
+        <!-- System configuration (creator-only) -->
+        <div class="function-card">
+          <div>
+            <div class="fc-title">🔧 系統設定</div>
+            <div class="fc-desc">設定系統參數、部門、班別</div>
+          </div>
+          <button class="btn-outline" onclick="openFunction('systemConfig')">設定</button>
+        </div>
+        <!-- Backup & restore (creator-only) -->
+        <div class="function-card">
+          <div>
+            <div class="fc-title">💾 備份與還原</div>
+            <div class="fc-desc">備份所有資料或從備份還原</div>
+          </div>
+          <button class="btn-outline" onclick="openFunction('backup')">操作</button>
+        </div>
+        <!-- Permission management (creator-only) -->
+        <div class="function-card">
+          <div>
+            <div class="fc-title">🔑 權限管理</div>
+            <div class="fc-desc">指派 Manager / Admin 角色給員工</div>
+          </div>
+          <button class="btn-primary" onclick="openFunction('permissions')">管理</button>
+        </div>
+      </div>
+
+    </div><!-- /page-admin -->
+
+  </div><!-- /content -->
+
+  <!-- ── Bottom Navigation ──────────────────────────────────────── -->
+  <nav id="bottom-nav">
+    <div class="nav-item active" data-page="home" onclick="navigate('home')">
+      <span class="icon">🏠</span>首頁
+    </div>
+    <div class="nav-item" data-page="schedule" onclick="navigate('schedule')">
+      <span class="icon">📅</span>排班
+    </div>
+    <div class="nav-item" data-page="salary" onclick="navigate('salary')">
+      <span class="icon">💰</span>薪資
+    </div>
+    <div class="nav-item" data-page="upload" onclick="navigate('upload')">
+      <span class="icon">📝</span>申請
+    </div>
+    <!-- Admin tab: only visible to admin/manager/creator -->
+    <div class="nav-item" id="nav-admin" data-page="admin" onclick="navigate('admin')"
+         style="display:none">
+      <span class="icon">⚙️</span>管理
+    </div>
+  </nav>
+
+</div><!-- /app -->
+
+<!-- ── Toast ──────────────────────────────────────────────────────── -->
+<div id="toast"></div>
+
+<!-- ── Loading Overlay ────────────────────────────────────────────── -->
+<div id="loading-overlay"><div class="spinner"></div></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════════════════ -->
+<script>
+// ── App State ───────────────────────────────────────────────────────────────
+var APP = {
+  empId:      '',
+  name:       '',
+  role:       'employee',   // 'employee' | 'manager' | 'admin' | 'creator'
+  currentPage: 'home',
+  selectedVacationDates: [],   // dates the employee wants OFF
+  salaryRecords:          [],
+  theme:      localStorage.getItem('hr-theme') || '#4A90D9'
+};
+
+// ── Init ────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+  applyTheme(APP.theme);
+  highlightThemeSwatch(APP.theme);
+  initDateDisplay();
+
+  // Attempt to load user from session / URL params for demo purposes
+  var urlParams = new URLSearchParams(window.location.search);
+  APP.empId = urlParams.get('empId') || 'EMP001';
+  APP.role  = urlParams.get('role')  || 'employee';
+  APP.name  = urlParams.get('name')  || '同仁';
+
+  initUser();
+  loadHomeData();
+  buildSchedulePeriods();
+});
+
+// ── User Setup ──────────────────────────────────────────────────────────────
+function initUser() {
+  document.getElementById('topbar-user').textContent = APP.name + '（' + roleLabel(APP.role) + '）';
+
+  var isAdmin = ['manager', 'admin', 'creator'].indexOf(APP.role) !== -1;
+  document.getElementById('nav-admin').style.display = isAdmin ? '' : 'none';
+
+  if (isAdmin) {
+    buildAdminRoleTabs();
+  }
+
+  document.getElementById('home-greeting').textContent   = '嗨，' + APP.name + '！';
+  document.getElementById('admin-greeting').textContent  = '嗨，' + APP.name + '！';
+}
+
+function roleLabel(role) {
+  return { employee: '員工', manager: 'Manager', admin: 'Admin', creator: 'Creator' }[role] || role;
+}
+
+// ── Navigation ──────────────────────────────────────────────────────────────
+function navigate(page) {
+  APP.currentPage = page;
+
+  document.querySelectorAll('.page').forEach(function (el) {
+    el.classList.remove('active');
+  });
+  document.getElementById('page-' + page).classList.add('active');
+
+  document.querySelectorAll('.nav-item').forEach(function (el) {
+    el.classList.toggle('active', el.dataset.page === page);
+  });
+
+  if (page === 'salary' && APP.salaryRecords.length === 0) loadSalaryHistory();
+  if (page === 'admin') loadAdminHomeData();
+}
+
+// ── Home Page Data ───────────────────────────────────────────────────────────
+function initDateDisplay() {
+  var now   = new Date();
+  var days  = ['日', '一', '二', '三', '四', '五', '六'];
+  var dateStr = now.getFullYear() + '/' +
+                pad2(now.getMonth() + 1) + '/' +
+                pad2(now.getDate()) + ' (' + days[now.getDay()] + ')';
+  document.getElementById('home-date').textContent  = dateStr;
+  document.getElementById('admin-date').textContent = dateStr;
+}
+
+function loadHomeData() {
+  setTodayStatus('on-duty', '今日出勤中');
+  setTomorrowShift('早班');
+
+  callBackend('getHomeStats', { empId: APP.empId }, function (res) {
+    if (res && res.success && res.data) {
+      document.getElementById('stat-week-hours').textContent  = res.data.weekHours  || 0;
+      document.getElementById('stat-week-pay').textContent    = formatMoney(res.data.weekPay   || 0);
+      document.getElementById('stat-month-hours').textContent = res.data.monthHours || 0;
+      document.getElementById('stat-month-pay').textContent   = formatMoney(res.data.monthPay  || 0);
+    }
+  });
+
+  callBackend('getNotifications', { empId: APP.empId }, function (res) {
+    var list = document.getElementById('notif-list');
+    if (res && res.success && res.data && res.data.length) {
+      list.innerHTML = res.data.map(renderNotif).join('');
+    } else {
+      list.innerHTML = '<p style="color:var(--text-muted);font-size:14px">目前沒有提醒事項。</p>';
+    }
+  });
+}
+
+function setTodayStatus(cls, text) {
+  var chip = document.getElementById('chip-today-status');
+  chip.className = 'status-chip ' + cls;
+  chip.textContent = text;
+}
+function setTomorrowShift(shift) {
+  document.getElementById('chip-tomorrow-shift').textContent = '明日：' + shift;
+}
+
+function renderNotif(n) {
+  var cls = n.type === 'warning' ? 'warning' : (n.type === 'danger' ? 'danger' : '');
+  return '<div class="notif-item ' + cls + '">' +
+    '<div class="notif-title">' + esc(n.title) + '</div>' +
+    '<div class="notif-content">' + esc(n.content) + '</div>' +
+    '<div class="notif-date">' + esc(n.date) + (n.from ? ' · ' + esc(n.from) : '') + '</div>' +
+    '</div>';
+}
+
+function postMessage() {
+  var input = document.getElementById('msg-input');
+  var text  = input.value.trim();
+  if (!text) return;
+  var list = document.getElementById('message-list');
+  var div  = document.createElement('div');
+  div.style.cssText = 'padding:8px 0;border-bottom:1px solid var(--border);font-size:14px';
+  div.innerHTML = '<strong>' + esc(APP.name) + '：</strong>' + esc(text);
+  list.prepend(div);
+  input.value = '';
+  showToast('留言已送出');
+}
+
+// ── Admin Home Data ──────────────────────────────────────────────────────────
+function loadAdminHomeData() {
+  callBackend('getHomeStats', { empId: APP.empId }, function (res) {
+    if (res && res.success && res.data) {
+      document.getElementById('admin-stat-wh').textContent = res.data.weekHours  || 0;
+      document.getElementById('admin-stat-wp').textContent = formatMoney(res.data.weekPay   || 0);
+      document.getElementById('admin-stat-mh').textContent = res.data.monthHours || 0;
+      document.getElementById('admin-stat-mp').textContent = formatMoney(res.data.monthPay  || 0);
+    }
+  });
+
+  callBackend('getNotifications', { empId: APP.empId }, function (res) {
+    var list = document.getElementById('admin-notif-list');
+    if (res && res.success && res.data && res.data.length) {
+      list.innerHTML = res.data.map(renderNotif).join('');
+    } else {
+      list.innerHTML = '<p style="color:var(--text-muted);font-size:14px">目前沒有提醒事項。</p>';
+    }
+  });
+}
+
+// ── Admin Role Tabs ──────────────────────────────────────────────────────────
+/**
+ * Build role tabs based on the logged-in user's role.
+ * Each role only shows its own unique tab (no overlap):
+ *   manager → only Manager tab
+ *   admin   → only Admin tab    (NOT Manager tab)
+ *   creator → all three tabs    (creator can do everything, but each tab is
+ *             distinct and the panels show non-overlapping functions)
+ *
+ * Note: creator sees all tabs because they own the whole system,
+ * but each panel's CONTENT is unique to that role's responsibilities.
+ */
+function buildAdminRoleTabs() {
+  var tabsEl  = document.getElementById('role-tabs');
+  var tabs    = [];
+
+  if (APP.role === 'manager') {
+    tabs = [{ id: 'manager', label: '👥 Manager 功能' }];
+  } else if (APP.role === 'admin') {
+    // Admin sees ONLY admin-specific functions (not manager employee mgmt)
+    tabs = [{ id: 'admin', label: '💰 Admin 功能' }];
+  } else if (APP.role === 'creator') {
+    // Creator sees all panels (but each panel has unique, non-overlapping content)
+    tabs = [
+      { id: 'manager', label: '👥 Manager' },
+      { id: 'admin',   label: '💰 Admin' },
+      { id: 'creator', label: '🔧 Creator' }
+    ];
+  }
+
+  tabsEl.innerHTML = tabs.map(function (t, i) {
+    return '<div class="role-tab' + (i === 0 ? ' active' : '') + '" ' +
+           'data-panel="' + t.id + '" onclick="switchRolePanel(this)">' +
+           t.label + '</div>';
+  }).join('');
+
+  // Show first panel
+  if (tabs.length > 0) showRolePanel(tabs[0].id);
+}
+
+function switchRolePanel(el) {
+  document.querySelectorAll('.role-tab').forEach(function (t) { t.classList.remove('active'); });
+  el.classList.add('active');
+  showRolePanel(el.dataset.panel);
+}
+
+function showRolePanel(panelId) {
+  document.querySelectorAll('.role-panel').forEach(function (p) { p.classList.remove('active'); });
+  var panel = document.getElementById('panel-' + panelId);
+  if (panel) panel.classList.add('active');
+}
+
+function openFunction(funcName) {
+  showToast('開啟功能：' + funcName + '（開發中）');
+}
+
+// ── Schedule / Vacation Pre-selection ───────────────────────────────────────
+/**
+ * Populate the period dropdown with the next 4 weeks.
+ */
+function buildSchedulePeriods() {
+  var sel   = document.getElementById('preselect-period');
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  for (var w = 0; w < 4; w++) {
+    var start = new Date(today);
+    // Align to upcoming Sunday
+    var dayOffset = (7 - today.getDay()) % 7 + w * 7;
+    start.setDate(today.getDate() + dayOffset);
+    var end = new Date(start);
+    end.setDate(start.getDate() + 6);
+
+    var label = formatDate(start) + ' ~ ' + formatDate(end);
+    var opt   = document.createElement('option');
+    opt.value = start.toISOString().slice(0, 10) + '|' + end.toISOString().slice(0, 10);
+    opt.textContent = label;
+    sel.appendChild(opt);
+  }
+}
+
+function loadSchedulePeriod() {
+  var val = document.getElementById('preselect-period').value;
+  if (!val) { document.getElementById('date-grid').innerHTML = ''; return; }
+
+  var parts = val.split('|');
+  var start = new Date(parts[0]);
+  var end   = new Date(parts[1]);
+
+  APP.selectedVacationDates = [];
+  renderDateGrid(start, end);
+  updateVacationSummary();
+}
+
+/**
+ * Renders a 7-column date grid.
+ * Each chip represents one date in the period.
+ * Clicking a chip TOGGLES it as a vacation day (highlighted = requested off).
+ */
+function renderDateGrid(start, end) {
+  var grid  = document.getElementById('date-grid');
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+  var html  = '';
+  var days  = ['日', '一', '二', '三', '四', '五', '六'];
+
+  // Fill leading empty cells to align with day-of-week
+  var firstDay = start.getDay();
+  for (var e = 0; e < firstDay; e++) {
+    html += '<div></div>';
+  }
+
+  for (var d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    var iso  = d.toISOString().slice(0, 10);
+    var past = d < today ? ' past' : '';
+    html += '<div class="date-chip' + past + '" ' +
+            'data-date="' + iso + '" ' +
+            (past ? '' : 'onclick="toggleVacationDate(this)"') + '>' +
+            '<span>' + d.getDate() + '</span>' +
+            '<span class="day-label">' + days[d.getDay()] + '</span>' +
+            '</div>';
+  }
+
+  grid.innerHTML = html;
+}
+
+/**
+ * Toggle a date as a vacation day.
+ * Selected (highlighted) = employee wants this day OFF.
+ */
+function toggleVacationDate(el) {
+  var date = el.dataset.date;
+  var idx  = APP.selectedVacationDates.indexOf(date);
+
+  if (idx === -1) {
+    APP.selectedVacationDates.push(date);
+    el.classList.add('vacation-selected');
+  } else {
+    APP.selectedVacationDates.splice(idx, 1);
+    el.classList.remove('vacation-selected');
+  }
+
+  updateVacationSummary();
+}
+
+function updateVacationSummary() {
+  document.getElementById('vacation-count').textContent = APP.selectedVacationDates.length;
+  document.getElementById('vacation-date-list').textContent =
+    APP.selectedVacationDates.length
+      ? APP.selectedVacationDates.sort().join('、')
+      : '尚未選擇任何日期';
+}
+
+/**
+ * Submit vacation selection to backend.
+ * Selected dates = vacation days (員工想要休假的日子).
+ * The backend's writePreselectSchedule_ will mark these as isOff = TRUE.
+ */
+function confirmScheduleSelection() {
+  var val = document.getElementById('preselect-period').value;
+  if (!val) { showToast('請先選擇排班週期'); return; }
+
+  var parts  = val.split('|');
+  var payload = {
+    empId:         APP.empId,
+    vacationDates: APP.selectedVacationDates,  // dates employee wants OFF
+    periodStart:   parts[0],
+    periodEnd:     parts[1]
+  };
+
+  showLoading(true);
+  callBackend('submitPreselect', payload, function (res) {
+    showLoading(false);
+    showToast(res && res.success
+      ? '✅ 休假申請已送出（' + APP.selectedVacationDates.length + ' 天）'
+      : '❌ 送出失敗：' + (res ? res.message : '未知錯誤'));
+  });
+}
+
+// ── Salary Page ──────────────────────────────────────────────────────────────
+/**
+ * Load salary history into the single merged dropdown.
+ * Supports both weekly and monthly records.
+ */
+function loadSalaryHistory() {
+  showLoading(true);
+  callBackend('getSalaryHistory', { empId: APP.empId }, function (res) {
+    showLoading(false);
+    var sel = document.getElementById('salary-history-select');
+    sel.innerHTML = '<option value="">— 選擇已發薪資 —</option>';
+
+    if (res && res.success && res.data && res.data.length) {
+      APP.salaryRecords = res.data;
+      res.data.forEach(function (r) {
+        var opt = document.createElement('option');
+        opt.value = r.key;
+        // Label already formatted as "2026年04月" or "2026 第15週"
+        opt.textContent = r.label + '  (' + (r.type === 'weekly' ? '週結' : '月結') +
+                          '  NT$' + formatMoney(r.amount) + ')';
+        sel.appendChild(opt);
+      });
+    }
+  });
+}
+
+/**
+ * Called when user picks a salary record.
+ * Enables the download button and loads the detail card.
+ */
+function onSalarySelectChange() {
+  var key = document.getElementById('salary-history-select').value;
+  document.getElementById('btn-download-slip').disabled = !key;
+  document.getElementById('salary-detail-wrap').style.display = 'none';
+  document.getElementById('salary-empty').style.display = key ? 'none' : '';
+
+  if (!key) return;
+
+  showLoading(true);
+  callBackend('getSalaryDetail', { empId: APP.empId, periodKey: key }, function (res) {
+    showLoading(false);
+    if (res && res.success && res.data) {
+      renderSalaryDetail(res.data);
+    }
+  });
+}
+
+function renderSalaryDetail(d) {
+  document.getElementById('sd-period').textContent  = d.periodKey || '—';
+  document.getElementById('sd-base').textContent    = 'NT$' + formatMoney(d.basePay);
+  document.getElementById('sd-ot').textContent      = 'NT$' + formatMoney(d.overtime);
+  document.getElementById('sd-bonus').textContent   = 'NT$' + formatMoney(d.bonus);
+  document.getElementById('sd-ded').textContent     = '-NT$' + formatMoney(d.deduction);
+  document.getElementById('sd-hours').textContent   = d.hours + ' 小時';
+  document.getElementById('sd-total').textContent   = 'NT$' + formatMoney(d.total);
+  document.getElementById('salary-detail-wrap').style.display = '';
+}
+
+/**
+ * Download payslip — uses the selected record from #salary-history-select.
+ * No separate "select month" needed (removed duplicate section).
+ */
+function downloadSalarySlip() {
+  var key = document.getElementById('salary-history-select').value;
+  if (!key) { showToast('請先選擇薪資週期'); return; }
+
+  // In a real GAS app, generate a PDF or open a printable view
+  showToast('下載薪資單：' + key + '（功能開發中）');
+}
+
+// ── Upload / Request Page ────────────────────────────────────────────────────
+var currentRequestType = '一般';
+
+function selectRequestType(el) {
+  document.querySelectorAll('.type-chip').forEach(function (c) { c.classList.remove('selected'); });
+  el.classList.add('selected');
+  currentRequestType = el.dataset.type;
+
+  // Show / hide expense fields
+  var expenseFields = document.getElementById('expense-fields');
+  var clockFields   = document.getElementById('clockfix-fields');
+
+  expenseFields.className = '';
+  clockFields.style.display = 'none';
+
+  if (currentRequestType === '費用請款') {
+    expenseFields.classList.add('shown');
+  } else if (currentRequestType === '補打卡') {
+    clockFields.style.display = '';
+  }
+}
+
+/**
+ * Get geolocation and fill the location field.
+ * BUG FIX: location is a separate field (column I), NOT merged into note.
+ * Button changes to theme color (active) when location is obtained.
+ */
+function getLocation() {
+  var btn = document.getElementById('btn-get-location');
+  if (!navigator.geolocation) {
+    showToast('此裝置不支援定位');
+    return;
+  }
+
+  btn.textContent = '📍 定位中…';
+  btn.disabled = true;
+
+  navigator.geolocation.getCurrentPosition(
+    function (pos) {
+      var coords = pos.coords.latitude.toFixed(6) + ', ' + pos.coords.longitude.toFixed(6);
+      document.getElementById('u-location').value = coords;
+      // Mark button as active (theme color) to show location was captured
+      btn.classList.add('is-active');
+      btn.textContent = '📍 位置已取得 ✓';
+      btn.disabled = false;
+      showToast('位置資訊已取得');
+    },
+    function (err) {
+      btn.textContent = '📍 傳送位置資訊';
+      btn.disabled = false;
+      showToast('定位失敗：' + err.message);
+    }
+  );
+}
+
+/**
+ * Submit request to backend.
+ * BUG FIX:
+ *  - amount, item, location are sent as SEPARATE payload fields.
+ *  - note field contains only supplementary text.
+ *  - clockfix sends full date+time string (prevents 1899 bug).
+ */
+function submitRequest() {
+  var title    = document.getElementById('u-title').value.trim();
+  var note     = document.getElementById('u-note').value.trim();
+  var location = document.getElementById('u-location').value.trim();
+
+  if (!title) { showToast('請填寫申請主旨'); return; }
+
+  var payload = {
+    type:     currentRequestType,
+    empId:    APP.empId,
+    name:     APP.name,
+    title:    title,
+    note:     note,
+    location: location   // separate field, not mixed into note
+  };
+
+  if (currentRequestType === '費用請款') {
+    var amount = document.getElementById('u-amount').value;
+    var item   = document.getElementById('u-item').value.trim();
+    if (!amount || !item) { showToast('請填寫代墊金額和商品名稱'); return; }
+    payload.amount = parseFloat(amount) || 0;
+    payload.item   = item;   // separate field
+  }
+
+  if (currentRequestType === '補打卡') {
+    var cfDate = document.getElementById('u-cf-date').value;
+    var cfTime = document.getElementById('u-cf-time').value;
+    var cfType = document.getElementById('u-cf-type').value;
+    if (!cfDate || !cfTime) { showToast('請填寫補打卡日期和時間'); return; }
+
+    // Use dedicated clock-fix action to avoid 1899 date bug
+    var cfPayload = {
+      empId:  APP.empId,
+      date:   cfDate.replace(/-/g, '/'),
+      time:   cfTime,
+      type:   cfType,
+      reason: note
+    };
+    showLoading(true);
+    callBackend('submitEmployeeClockFix', cfPayload, function (res) {
+      showLoading(false);
+      showToast(res && res.success ? '✅ 補打卡申請已送出' : '❌ 送出失敗');
+      if (res && res.success) resetRequestForm();
+    });
+    return;
+  }
+
+  showLoading(true);
+  callBackend('submitEmployeeUpload', payload, function (res) {
+    showLoading(false);
+    showToast(res && res.success ? '✅ 申請已送出' : '❌ 送出失敗：' + (res ? res.message : ''));
+    if (res && res.success) resetRequestForm();
+  });
+}
+
+function resetRequestForm() {
+  document.getElementById('u-title').value    = '';
+  document.getElementById('u-note').value     = '';
+  document.getElementById('u-location').value = '';
+  document.getElementById('u-amount').value   = '';
+  document.getElementById('u-item').value     = '';
+  document.getElementById('u-cf-date').value  = '';
+  document.getElementById('u-cf-time').value  = '';
+
+  // Reset location button active state
+  var locBtn = document.getElementById('btn-get-location');
+  locBtn.classList.remove('is-active');
+  locBtn.textContent = '📍 傳送位置資訊';
+
+  // Reset type selection
+  document.querySelectorAll('.type-chip').forEach(function (c, i) {
+    c.classList.toggle('selected', i === 0);
+  });
+  currentRequestType = '一般';
+  document.getElementById('expense-fields').className = '';
+  document.getElementById('clockfix-fields').style.display = 'none';
+}
+
+// ── Theme ────────────────────────────────────────────────────────────────────
+function setTheme(el) {
+  applyTheme(el.dataset.color);
+  highlightThemeSwatch(el.dataset.color);
+  localStorage.setItem('hr-theme', el.dataset.color);
+}
+
+function applyTheme(color) {
+  APP.theme = color;
+  document.documentElement.style.setProperty('--primary', color);
+  // Derive dark variant (darken ~15%)
+  document.documentElement.style.setProperty('--primary-dark', darkenColor(color, 0.15));
+  document.documentElement.style.setProperty('--primary-light', lightenColor(color, 0.85));
+  document.documentElement.style.setProperty('--active-btn', color);
+}
+
+function highlightThemeSwatch(color) {
+  document.querySelectorAll('.swatch').forEach(function (s) {
+    s.classList.toggle('selected', s.dataset.color === color);
+  });
+}
+
+function darkenColor(hex, amount) {
+  var c = hexToRgb(hex);
+  if (!c) return hex;
+  return 'rgb(' + Math.max(0, Math.round(c.r * (1 - amount))) + ',' +
+                  Math.max(0, Math.round(c.g * (1 - amount))) + ',' +
+                  Math.max(0, Math.round(c.b * (1 - amount))) + ')';
+}
+
+function lightenColor(hex, amount) {
+  var c = hexToRgb(hex);
+  if (!c) return hex;
+  return 'rgb(' + Math.min(255, Math.round(c.r + (255 - c.r) * amount)) + ',' +
+                  Math.min(255, Math.round(c.g + (255 - c.g) * amount)) + ',' +
+                  Math.min(255, Math.round(c.b + (255 - c.b) * amount)) + ')';
+}
+
+function hexToRgb(hex) {
+  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+}
+
+// ── Backend Communication ────────────────────────────────────────────────────
+/**
+ * Calls the GAS backend via google.script.run.
+ * Falls back to a stub in non-GAS environments (for testing/demo).
+ */
+function callBackend(action, payload, callback) {
+  if (typeof google !== 'undefined' && google.script && google.script.run) {
+    google.script.run
+      .withSuccessHandler(function (res) { callback(res); })
+      .withFailureHandler(function (err) { callback({ success: false, message: err.message }); })
+      .processRequest(action, payload);
+  } else {
+    // Demo stub: simulate minimal responses
+    setTimeout(function () { callback(demoStub(action, payload)); }, 300);
+  }
+}
+
+function demoStub(action, payload) {
+  switch (action) {
+    case 'getSalaryHistory':
+      return {
+        success: true,
+        data: [
+          { key: '2026-04', type: 'monthly', label: '2026年04月', amount: 32000, hours: 160 },
+          { key: '2026-W15', type: 'weekly', label: '2026 第15週', amount: 8000,  hours: 40  },
+          { key: '2026-03', type: 'monthly', label: '2026年03月', amount: 31500, hours: 155 }
+        ]
+      };
+    case 'getSalaryDetail':
+      return {
+        success: true,
+        data: {
+          empId: payload.empId, periodKey: payload.periodKey, periodType: 'monthly',
+          basePay: 28000, overtime: 2500, bonus: 1500, deduction: 500, total: 31500, hours: 160
+        }
+      };
+    case 'getHomeStats':
+      return { success: true, data: { weekHours: 38, weekPay: 7600, monthHours: 152, monthPay: 30400 } };
+    case 'getNotifications':
+      return {
+        success: true,
+        data: [
+          { id: '1', type: 'notice', title: '主管通知', content: '本週五下午開會，請準時出席。', date: '2026/04/15', from: '陳主管' },
+          { id: '2', type: 'reminder', title: '📝 提醒', content: '下週排班預選截止日：4/18。', date: '2026/04/16', from: '' }
+        ]
+      };
+    default:
+      return { success: true, message: 'OK' };
+  }
+}
+
+// ── UI Helpers ────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._timer);
+  el._timer = setTimeout(function () { el.classList.remove('show'); }, 3000);
+}
+
+function showLoading(show) {
+  document.getElementById('loading-overlay').classList.toggle('show', show);
+}
+
+function formatDate(d) {
+  return d.getFullYear() + '/' + pad2(d.getMonth() + 1) + '/' + pad2(d.getDate());
+}
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+
+function formatMoney(n) {
+  return Number(n).toLocaleString('zh-TW');
+}
+
+function esc(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>
