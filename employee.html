@@ -224,6 +224,13 @@
         </div>
       </div>
 
+      <div class="card" id="clock-btn-card" style="padding:16px">
+        <button class="btn-main" id="clockBtn" onclick="doClock()" style="font-size:17px;padding:18px 14px;letter-spacing:.5px">
+          <i class="fa-solid fa-fingerprint" style="margin-right:8px"></i><span id="clockBtnLabel">打卡</span>
+        </button>
+        <div id="clockBtnNote" style="text-align:center;font-size:12px;color:var(--muted);margin-top:8px;font-weight:900"></div>
+      </div>
+
       <div class="trend-card">
         <div class="trend-bg" aria-hidden="true"><svg viewBox="0 0 320 120" preserveAspectRatio="none"><polyline points="8,90 62,88 96,74 140,70 180,48 220,42 266,22 312,16"></polyline></svg></div>
         <div class="trend-split">
@@ -868,6 +875,29 @@
       });
     }
 
+    /* ==================== 打卡 ==================== */
+
+    function updateClockBtn(todayRec){
+      var lbl=qs('clockBtnLabel'),note=qs('clockBtnNote');if(!lbl)return;
+      var hasIn=todayRec&&!!String(todayRec.inTime||'').trim();
+      var hasOut=todayRec&&!!String(todayRec.outTime||'').trim();
+      if(hasIn&&hasOut){lbl.textContent='今日已完成打卡';if(note)note.textContent='已記錄上班 '+todayRec.inTime+' · 下班 '+todayRec.outTime}
+      else if(hasIn){lbl.textContent='⬇ 下班打卡';if(note)note.textContent='上班時間：'+todayRec.inTime+'｜點擊記錄下班'}
+      else{lbl.textContent='⬆ 上班打卡';if(note)note.textContent='點擊記錄今日上班時間'}
+    }
+
+    function doClock(){
+      var id=state.employeeId,token=state.userToken;
+      if(!id||!token){showWarning('員工資料尚未載入，請稍後再試');return}
+      apiPost('clock',{id:id,token:token,source:'web'},function(res){
+        if(!res)return;
+        if(res.ok){
+          showSuccess(res.message||(res.actionType?res.actionType+'打卡成功':'打卡成功'));
+          loadBootstrapData();loadTodayStatus();
+        }
+      });
+    }
+
     /* ==================== 渲染 ==================== */
 
     function findRecordByDate(records,ymd){var list=Array.isArray(records)?records:[];for(var i=0;i<list.length;i++){if(String(list[i].date||'')===ymd)return list[i]}return null}
@@ -959,6 +989,7 @@
       state.messages=Array.isArray(res.messages)?res.messages:state.messages;
       state.profileName=p.nickname||p.name||'';
       seedCalendarEvents();refreshCalendars();renderMessageBoard();renderClockRecordList();renderSalaryDayPayList();syncSalaryEstimate();
+      var todayKey=dateKey(new Date());updateClockBtn(findRecordByDate(state.workRecords,todayKey));
     }
 
     function loadBootstrapData(){
