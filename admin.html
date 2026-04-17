@@ -1,1055 +1,761 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>管理後台</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <title>ANG Engine 管理中心</title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root{
+      --bg:#f5f7fb;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;
+      --soft:#f3f4f6;--ok:#10b981;--warn:#f59e0b;--danger:#ef4444;
+      --emp:#ff7a21;--emp-deep:#c45a10;--emp-soft:rgba(255,122,33,.12);
+      --emp-rgb:255,122,33;--text-on-emp:#fff;
+      --emp-gradient:linear-gradient(135deg,#ff882f 0%,#ff6d1d 58%,#ffac73 100%);
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    body{padding-bottom:100px}
 
-    :root {
-      --manager-color: #667eea;
-      --admin-color: #f5576c;
-      --creator-color: #43e97b;
-      --accent: #667eea;
-      --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      --bg: #f4f6fb;
-      --card-bg: #ffffff;
-      --text: #2d3748;
-      --text-muted: #718096;
-      --border: #e2e8f0;
-      --shadow: 0 2px 12px rgba(0,0,0,0.08);
-      --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
-      --nav-height: 64px;
-      --radius: 16px;
-      --radius-sm: 10px;
-    }
+    /* === 頂部 === */
+    .topbar{position:sticky;top:0;z-index:1000;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);padding:8px 12px;min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+    .topbar-left{display:flex;align-items:center;gap:10px}
+    .topbar-right{text-align:right;flex:1}
+    .brand-logo{width:48px;height:48px;border-radius:16px;display:flex;align-items:center;justify-content:center;background:var(--emp-gradient);color:#fff;font-size:16px;font-weight:900;box-shadow:0 6px 14px rgba(var(--emp-rgb),.18);overflow:hidden}
+    .brand-logo img{width:100%;height:100%;object-fit:cover}
+    .brand-title-main{font-size:14px;font-weight:900;color:var(--emp-deep)}
+    .brand-title-sub{font-size:10px;font-weight:800;color:#9ca3af}
+    .title{font-size:16px;font-weight:900;color:var(--emp-deep)}
+    .sub-title{font-size:11px;font-weight:800;color:#9ca3af}
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      padding-bottom: calc(var(--nav-height) + 16px);
-    }
+    /* === 通用 === */
+    .safe{padding:8px 8px 0}
+    .page{display:none}.page.active{display:block;animation:fadeIn .2s ease}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+    .card{background:var(--card);border-radius:22px;padding:14px;margin-bottom:10px;box-shadow:0 8px 24px rgba(0,0,0,.05);border:1px solid rgba(0,0,0,.03)}
+    .label{display:block;font-size:13px;color:var(--muted);font-weight:900;margin:0 0 7px}
+    input,select,textarea{width:100%;border:none;outline:none;border-radius:16px;background:var(--soft);padding:13px 12px;font:inherit;color:var(--text);margin-bottom:10px}
+    textarea{resize:vertical;min-height:80px}
+    .hidden{display:none!important}
 
-    /* ── Header ─────────────────────────────────────── */
-    .app-header {
-      background: var(--accent-gradient);
-      color: #fff;
-      padding: 20px 20px 24px;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      box-shadow: 0 2px 16px rgba(102,126,234,0.3);
-    }
-    .app-header h1 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-    }
-    .app-header .subtitle {
-      font-size: 0.78rem;
-      opacity: 0.82;
-      margin-top: 2px;
-    }
+    /* === 按鈕 === */
+    .btn-main,.btn-ghost,.btn-soft,.btn-danger,.btn-success{border:none;outline:none;cursor:pointer;font:inherit;width:100%;border-radius:18px;padding:14px;font-weight:900;font-size:15px;transition:transform .15s,box-shadow .18s,background .18s}
+    .btn-main:active,.btn-ghost:active,.btn-soft:active,.btn-danger:active,.btn-success:active{transform:scale(.98)}
+    .btn-main{background:var(--emp-gradient);color:var(--text-on-emp);box-shadow:0 12px 24px rgba(var(--emp-rgb),.22)}
+    .btn-ghost{background:linear-gradient(135deg,rgba(var(--emp-rgb),.18),rgba(var(--emp-rgb),.30));color:var(--emp-deep);font-size:14px;border:1px solid rgba(var(--emp-rgb),.22)}
+    .btn-soft{background:linear-gradient(135deg,rgba(var(--emp-rgb),.20),rgba(var(--emp-rgb),.34));color:var(--emp-deep);font-size:14px;border:1px solid rgba(var(--emp-rgb),.18)}
+    .btn-danger{background:#fef2f2;color:#b91c1c;font-size:14px;border:1px solid #fecaca}
+    .btn-success{background:#ecfdf5;color:#047857;font-size:14px;border:1px solid #a7f3d0}
+    .btn-sm{display:inline-flex;align-items:center;gap:4px;border:none;outline:none;cursor:pointer;border-radius:12px;padding:8px 12px;font-size:12px;font-weight:900;background:var(--soft);color:var(--text);transition:background .15s,transform .1s}
+    .btn-sm:active{transform:scale(.95)}
+    .btn-sm.active{background:var(--emp-gradient);color:#fff}
 
-    /* ── Pages ──────────────────────────────────────── */
-    .page { display: none; padding: 16px; animation: fadeIn 0.25s ease; }
-    .page.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    /* === 佈局 === */
+    .mini-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+    .mini-row h3{margin:0;font-size:16px;font-weight:900}
+    .badge{display:inline-flex;align-items:center;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:900;background:linear-gradient(180deg,#fff,rgba(var(--emp-rgb),.14));color:var(--emp-deep);border:1px solid rgba(var(--emp-rgb),.14)}
+    .badge.ok{background:#ecfdf5;color:#047857}.badge.warn{background:#fff7ed;color:#c2410c}.badge.danger{background:#fef2f2;color:#b91c1c}
+    .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+    .stat-mini{background:linear-gradient(180deg,#fff,rgba(var(--emp-rgb),.06));border:1px solid rgba(var(--emp-rgb),.10);border-radius:18px;padding:12px;text-align:center}
+    .stat-mini small{display:block;font-size:10px;font-weight:900;color:var(--muted);margin-bottom:5px}
+    .stat-mini .v{font-size:16px;font-weight:900}
+    .tool-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}
+    .tool-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+    .field-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .check-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--soft);border-radius:14px;margin-bottom:8px}
+    .check-row input[type="checkbox"]{width:20px;height:20px;margin:0}
+    .check-row label{font-size:14px;font-weight:900}
 
-    /* ── Section title ──────────────────────────────── */
-    .section-title {
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin: 20px 0 10px;
-    }
-    .section-title:first-child { margin-top: 4px; }
+    /* === Hero === */
+    .hero{background:var(--emp-gradient);color:#fff;border-radius:24px;padding:16px;margin-bottom:10px;box-shadow:0 12px 28px rgba(var(--emp-rgb),.22)}
+    .hero-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px}
+    .hello{font-size:22px;font-weight:900;line-height:1.1}
+    .hello-sub{margin-top:5px;font-size:12px;font-weight:800;opacity:.92}
+    .hero-chip{background:rgba(255,255,255,.17);border:1px solid rgba(255,255,255,.15);border-radius:999px;padding:8px 12px;font-size:11px;font-weight:900}
 
-    /* ── Card ───────────────────────────────────────── */
-    .card {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 18px;
-      margin-bottom: 12px;
-    }
-    .card-title {
-      font-size: 1rem;
-      font-weight: 700;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .card-title i { color: var(--accent); font-size: 1rem; }
+    /* === 卡片項目 === */
+    .notice-item,.review-card{background:linear-gradient(180deg,#fff,rgba(var(--emp-rgb),.06));border:1px solid rgba(var(--emp-rgb),.10);border-radius:18px;padding:12px;box-shadow:0 8px 18px rgba(var(--emp-rgb),.04);margin-bottom:8px}
+    .item-title{font-size:14px;font-weight:900;line-height:1.35;margin-bottom:4px}
+    .item-meta{font-size:12px;color:var(--muted);line-height:1.5;word-break:break-word}
+    .review-actions{display:flex;gap:8px;margin-top:10px}
+    .review-actions button{flex:1}
 
-    /* ── Welcome card ───────────────────────────────── */
-    .welcome-card {
-      background: var(--accent-gradient);
-      color: #fff;
-      border-radius: var(--radius);
-      padding: 22px 20px;
-      margin-bottom: 16px;
-      box-shadow: var(--shadow-lg);
-    }
-    .welcome-name {
-      font-size: 1.25rem;
-      font-weight: 700;
-      margin-bottom: 6px;
-    }
-    .role-chip {
-      display: inline-block;
-      background: rgba(255,255,255,0.28);
-      color: #fff;
-      border-radius: 20px;
-      padding: 3px 14px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-    }
+    /* === 薪資明細 === */
+    .salary-line{display:flex;align-items:center;gap:8px;padding:10px;background:var(--soft);border-radius:14px;margin-bottom:6px}
+    .salary-line .sl-label{flex:0 0 auto;font-size:13px;font-weight:900;min-width:60px}
+    .salary-line .sl-val{flex:1;text-align:right;font-size:14px;font-weight:900}
+    .salary-line .sl-val.negative{color:#b91c1c}
+    .salary-line input{margin:0;padding:8px;border-radius:10px;text-align:right;font-weight:900;width:100px}
+    .extra-row{display:flex;align-items:center;gap:6px;padding:8px;background:#fff7ed;border:1px solid rgba(var(--emp-rgb),.12);border-radius:14px;margin-bottom:6px}
+    .extra-row select{width:auto;min-width:80px;margin:0;padding:8px;border-radius:10px}
+    .extra-row input{margin:0;padding:8px;border-radius:10px;font-weight:900}
+    .extra-row .del-btn{flex:0 0 auto;width:32px;height:32px;border:none;background:#fef2f2;color:#b91c1c;border-radius:10px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 
-    /* ── Count grid ─────────────────────────────────── */
-    .count-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 4px;
+    /* === L型圓形放射導航 === */
+    .fab-wrap{
+      position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:1200;
+      width:240px;height:240px;pointer-events:none;
     }
-    .count-card {
-      background: var(--card-bg);
-      border-radius: var(--radius-sm);
-      box-shadow: var(--shadow);
-      padding: 14px 12px;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
+    .fab-wrap *{pointer-events:auto}
+    .fab-home{
+      position:absolute;right:0;bottom:0;
+      width:68px;height:68px;border:none;border-radius:999px;
+      background:var(--emp-gradient);color:#fff;font-size:24px;
+      box-shadow:0 10px 28px rgba(var(--emp-rgb),.35);
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      transition:transform .18s ease;z-index:10;
     }
-    .count-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 3px;
-      background: var(--accent-gradient);
+    .fab-home:active{transform:scale(.9)}
+    .fab-home.swap{animation:fabPulse .4s ease}
+    @keyframes fabPulse{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+    .fab-sat{
+      position:absolute;border:none;border-radius:999px;
+      background:rgba(255,255,255,.96);color:var(--emp-deep);font-weight:900;
+      box-shadow:0 6px 18px rgba(0,0,0,.10);cursor:pointer;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+      transition:transform .18s ease,background .18s ease,color .18s ease;z-index:5;
     }
-    .count-label {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-      font-weight: 500;
-    }
-    .count-num {
-      font-size: 1.8rem;
-      font-weight: 800;
-      color: var(--accent);
-      line-height: 1;
-    }
-    .count-num.loading { font-size: 1.2rem; color: var(--text-muted); }
+    .fab-sat:active{transform:scale(.88)!important}
+    .fab-sat i{line-height:1}
+    .fab-sat span{line-height:1;font-weight:900;white-space:nowrap}
+    .fab-sat.active{background:var(--emp-gradient);color:#fff;box-shadow:0 8px 22px rgba(var(--emp-rgb),.28)}
+    .fab-sat.sat-admin{width:52px;height:52px;right:78px;bottom:8px}.fab-sat.sat-admin i{font-size:16px}.fab-sat.sat-admin span{font-size:8px}
+    .fab-sat.sat-creator{width:42px;height:42px;right:138px;bottom:12px}.fab-sat.sat-creator i{font-size:13px}.fab-sat.sat-creator span{font-size:7px}
+    .fab-sat.sat-manager{width:58px;height:58px;right:5px;bottom:78px}.fab-sat.sat-manager i{font-size:17px}.fab-sat.sat-manager span{font-size:8px}
+    .fab-sat.sat-data{width:46px;height:46px;right:8px;bottom:144px}.fab-sat.sat-data i{font-size:14px}.fab-sat.sat-data span{font-size:7px}
+    .fab-badge{position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;border-radius:999px;background:#ef4444;color:#fff;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;padding:0 4px}
+    .fab-badge:empty{display:none}
 
-    /* ── Notification list ──────────────────────────── */
-    .notif-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .notif-item:last-child { border-bottom: none; padding-bottom: 0; }
-    .notif-icon {
-      width: 34px; height: 34px;
-      border-radius: 50%;
-      background: var(--accent-gradient);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      color: #fff;
-      font-size: 0.85rem;
-    }
-    .notif-body { flex: 1; }
-    .notif-text { font-size: 0.85rem; font-weight: 500; line-height: 1.4; }
-    .notif-time { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
-    .empty-state {
-      text-align: center;
-      color: var(--text-muted);
-      padding: 20px;
-      font-size: 0.85rem;
-    }
-    .empty-state i { font-size: 2rem; display: block; margin-bottom: 8px; opacity: 0.4; }
-
-    /* ── Quick actions ──────────────────────────────── */
-    .quick-actions {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-    .quick-btn {
-      background: var(--card-bg);
-      border: none;
-      border-radius: var(--radius-sm);
-      box-shadow: var(--shadow);
-      padding: 14px 6px;
-      cursor: pointer;
-      text-align: center;
-      transition: transform 0.15s, box-shadow 0.15s;
-      font-family: inherit;
-    }
-    .quick-btn:active { transform: scale(0.96); box-shadow: none; }
-    .quick-btn i {
-      display: block;
-      font-size: 1.3rem;
-      color: var(--accent);
-      margin-bottom: 6px;
-    }
-    .quick-btn span { font-size: 0.72rem; color: var(--text); font-weight: 500; }
-
-    /* ── Review list ────────────────────────────────── */
-    .review-item {
-      background: var(--card-bg);
-      border-radius: var(--radius-sm);
-      box-shadow: var(--shadow);
-      padding: 14px 16px;
-      margin-bottom: 10px;
-    }
-    .review-item-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-    .review-item-name { font-weight: 700; font-size: 0.9rem; }
-    .review-item-date { font-size: 0.75rem; color: var(--text-muted); }
-    .review-item-meta { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 10px; }
-    .review-actions { display: flex; gap: 8px; }
-    .btn-approve, .btn-reject {
-      flex: 1;
-      padding: 8px;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
-      transition: opacity 0.15s;
-    }
-    .btn-approve { background: #48bb78; color: #fff; }
-    .btn-reject  { background: #fc8181; color: #fff; }
-    .btn-approve:active, .btn-reject:active { opacity: 0.75; }
-
-    /* ── Status badge ───────────────────────────────── */
-    .badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 0.7rem;
-      font-weight: 600;
-    }
-    .badge-pending  { background: #fef3c7; color: #d97706; }
-    .badge-approved { background: #d1fae5; color: #065f46; }
-    .badge-rejected { background: #fee2e2; color: #991b1b; }
-
-    /* ── Settings / placeholder pages ──────────────── */
-    .wip-card {
-      text-align: center;
-      padding: 48px 20px;
-    }
-    .wip-icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.35; }
-    .wip-title { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
-    .wip-sub { font-size: 0.85rem; color: var(--text-muted); }
-
-    /* ── Page header (for inner pages) ─────────────── */
-    .page-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-    .page-header-icon {
-      width: 40px; height: 40px;
-      border-radius: 12px;
-      background: var(--accent-gradient);
-      display: flex; align-items: center; justify-content: center;
-      color: #fff;
-      font-size: 1rem;
-    }
-    .page-header-text h2 { font-size: 1rem; font-weight: 700; }
-    .page-header-text p  { font-size: 0.78rem; color: var(--text-muted); }
-
-    /* ── Toast ──────────────────────────────────────── */
-    #toast {
-      position: fixed;
-      bottom: calc(var(--nav-height) + 20px);
-      left: 50%; transform: translateX(-50%) translateY(20px);
-      background: #2d3748;
-      color: #fff;
-      padding: 10px 22px;
-      border-radius: 24px;
-      font-size: 0.85rem;
-      font-weight: 500;
-      opacity: 0;
-      transition: opacity 0.3s, transform 0.3s;
-      z-index: 9999;
-      pointer-events: none;
-      white-space: nowrap;
-    }
-    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-    /* ── Bottom navigation ──────────────────────────── */
-    #bottom-nav {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      height: var(--nav-height);
-      background: #fff;
-      border-top: 1px solid var(--border);
-      box-shadow: 0 -4px 20px rgba(0,0,0,0.07);
-      display: flex;
-      align-items: center;
-      justify-content: space-around;
-      padding: 0 4px;
-      z-index: 500;
-      overflow-x: auto;
-      overflow-y: hidden;
-      scrollbar-width: none;
-    }
-    #bottom-nav::-webkit-scrollbar { display: none; }
-
-    .nav-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 3px;
-      padding: 6px 10px;
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      border-radius: 12px;
-      transition: background 0.15s;
-      font-family: inherit;
-      min-width: 52px;
-      flex-shrink: 0;
-    }
-    .nav-btn i {
-      font-size: 1.15rem;
-      color: var(--text-muted);
-      transition: color 0.15s;
-    }
-    .nav-btn span {
-      font-size: 0.62rem;
-      color: var(--text-muted);
-      font-weight: 500;
-      transition: color 0.15s;
-      white-space: nowrap;
-    }
-    .nav-btn.active i, .nav-btn.active span { color: var(--accent); }
-    .nav-btn.active { background: rgba(102,126,234,0.08); }
-    .nav-btn:active { background: var(--border); }
-
-    /* ── Loader ─────────────────────────────────────── */
-    .loader-wrap {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 32px;
-    }
-    .spinner {
-      width: 28px; height: 28px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── Salary / Notify / Schedule placeholder ─────── */
-    .feature-form { margin-top: 8px; }
-    .form-row { margin-bottom: 14px; }
-    .form-label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 5px; display: block; }
-    .form-input {
-      width: 100%;
-      padding: 10px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      font-size: 0.88rem;
-      font-family: inherit;
-      background: #fff;
-      color: var(--text);
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    .form-input:focus { border-color: var(--accent); }
-    .btn-primary {
-      width: 100%;
-      padding: 12px;
-      background: var(--accent-gradient);
-      color: #fff;
-      border: none;
-      border-radius: 12px;
-      font-size: 0.9rem;
-      font-weight: 700;
-      cursor: pointer;
-      font-family: inherit;
-      transition: opacity 0.15s;
-    }
-    .btn-primary:active { opacity: 0.8; }
-
-    /* ── Responsive ─────────────────────────────────── */
-    @media (min-width: 480px) {
-      .count-grid { grid-template-columns: repeat(4, 1fr); }
-      .quick-actions { grid-template-columns: repeat(4, 1fr); }
-    }
-    @media (min-width: 768px) {
-      body { max-width: 600px; margin: 0 auto; }
-      #bottom-nav { max-width: 600px; left: 50%; transform: translateX(-50%); }
-    }
+    @media(max-width:390px){.safe{padding:6px 6px 0}.card{padding:12px;border-radius:20px}.hello{font-size:20px}}
   </style>
 </head>
 <body>
 
-  <!-- App Header -->
-  <header class="app-header">
-    <h1 id="header-title">管理後台</h1>
-    <div class="subtitle" id="header-subtitle">載入中…</div>
-  </header>
-
-  <!-- ════════════════════════════════════════════════
-       PAGE: HOME
-  ════════════════════════════════════════════════ -->
-  <div class="page active" id="page-home">
-
-    <div class="welcome-card" id="welcome-card">
-      <div class="welcome-name" id="welcome-name">👋 歡迎</div>
-      <span class="role-chip" id="role-chip"></span>
+  <!-- ===== 頂部 ===== -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="brand-logo" id="brandLogo">ANG</div>
+      <div><div class="brand-title-main" id="brandTitleMain">ANG.lo</div><div class="brand-title-sub" id="brandTitleSub">管理中心</div></div>
     </div>
-
-    <div class="section-title">📋 待審核項目</div>
-    <div class="count-grid">
-      <div class="count-card">
-        <div class="count-label">請假待審核</div>
-        <div class="count-num loading" id="count-leave">…</div>
-      </div>
-      <div class="count-card">
-        <div class="count-label">補卡待審核</div>
-        <div class="count-num loading" id="count-clockfix">…</div>
-      </div>
-      <div class="count-card">
-        <div class="count-label">資料待審核</div>
-        <div class="count-num loading" id="count-upload">…</div>
-      </div>
-      <div class="count-card">
-        <div class="count-label">留言待審核</div>
-        <div class="count-num loading" id="count-message">…</div>
-      </div>
-    </div>
-
-    <div class="section-title">🔔 最新通知</div>
-    <div class="card" id="home-notif-card">
-      <div id="home-notif-list">
-        <div class="empty-state"><i class="fa-regular fa-bell"></i>暫無通知</div>
-      </div>
-    </div>
-
-    <div class="section-title">⚡ 快速操作</div>
-    <div class="quick-actions" id="quick-actions"></div>
-
-  </div>
-
-  <!-- ════════════════════════════════════════════════
-       PAGE: LEAVE 請假審核
-  ════════════════════════════════════════════════ -->
-  <div class="page" id="page-leave">
-    <div class="page-header">
-      <div class="page-header-icon"><i class="fa-solid fa-calendar-check"></i></div>
-      <div class="page-header-text">
-        <h2>請假審核</h2>
-        <p>審核員工請假申請</p>
-      </div>
-    </div>
-    <div id="leave-list">
-      <div class="loader-wrap"><div class="spinner"></div></div>
+    <div class="topbar-right">
+      <div class="title" id="topTitle">ANG.lo Engine</div>
+      <div class="sub-title" id="topSub">管理中心</div>
     </div>
   </div>
 
-  <!-- ════════════════════════════════════════════════
-       PAGE: CLOCKFIX 補卡審核
-  ════════════════════════════════════════════════ -->
-  <div class="page" id="page-clockfix">
-    <div class="page-header">
-      <div class="page-header-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
-      <div class="page-header-text">
-        <h2>補卡審核</h2>
-        <p>審核員工補打卡申請</p>
-      </div>
-    </div>
-    <div id="clockfix-list">
-      <div class="loader-wrap"><div class="spinner"></div></div>
-    </div>
-  </div>
+  <div class="safe">
 
-  <!-- ════════════════════════════════════════════════
-       PAGE: UPLOAD 資料審核
-  ════════════════════════════════════════════════ -->
-  <div class="page" id="page-upload">
-    <div class="page-header">
-      <div class="page-header-icon"><i class="fa-solid fa-file-circle-check"></i></div>
-      <div class="page-header-text">
-        <h2>資料審核</h2>
-        <p>審核員工上傳資料</p>
-      </div>
-    </div>
-    <div id="upload-list">
-      <div class="loader-wrap"><div class="spinner"></div></div>
-    </div>
-  </div>
-
-  <!-- ════════════════════════════════════════════════
-       PAGE: MESSAGE 留言審核
-  ════════════════════════════════════════════════ -->
-  <div class="page" id="page-message">
-    <div class="page-header">
-      <div class="page-header-icon"><i class="fa-solid fa-comments"></i></div>
-      <div class="page-header-text">
-        <h2>留言審核</h2>
-        <p>審核員工留言內容</p>
-      </div>
-    </div>
-    <div id="message-list">
-      <div class="loader-wrap"><div class="spinner"></div></div>
-    </div>
-  </div>
-
-  <!-- ════════════════════════════════════════════════
-       PAGE: SALARY 薪資審核
-  ════════════════════════════════════════════════ -->
-  <div class="page" id="page-salary">
-    <div class="page-header">
-      <div class="page-header-icon"><i class="fa-solid fa-money-check-dollar"></i></div>
-      <div class="page-header-text">
-        <h2>薪資審核</h2>
-        <p>審核員工薪資資訊</p>
-      </div>
-    </div>
-    <div id="salary-list">
-      <div class="loader-wrap"><div class="spinner"></div></div>
-    </div>
-  </div>
-
-  <!-- ════════════════════════════════════════════════
-       PAGE: NOTIFY 通知管理
-  ════════════════════════════════════════════════ -->
-  <div class="page" id="page-notify">
-    <div class="page-header">
-      <div class="page-header-icon"><i class="fa-solid fa-bell"></i></div>
-      <div class="page-header-text">
-        <h2>通知管理</h2>
-        <p>發送與管理系統通知</p>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title"><i class="fa-solid fa-paper-plane"></i>發送通知</div>
-      <div class="feature-form">
-        <div class="form-row">
-          <label class="form-label">通知對象</label>
-          <select class="form-input" id="notify-target">
-            <option value="all">全體員工</option>
-            <option value="dept">指定部門</option>
-            <option value="person">指定個人</option>
-          </select>
+    <!-- ==================== Admin 主頁 ==================== -->
+    <section id="page-admin" class="page active">
+      <div class="hero">
+        <div class="hero-top">
+          <div><div class="hello" id="admHello">Admin 管理</div><div class="hello-sub">打卡、補卡審核、薪資審核、期限、品牌、歸檔</div></div>
+          <div class="hero-chip" id="admChip">Admin</div>
         </div>
-        <div class="form-row">
-          <label class="form-label">通知標題</label>
-          <input class="form-input" type="text" id="notify-title" placeholder="請輸入通知標題" />
+      </div>
+      <div class="stat-grid">
+        <div class="stat-mini"><small>待審補卡</small><div class="v" id="admClockFixPending">0</div></div>
+        <div class="stat-mini"><small>待審薪資</small><div class="v" id="admSalaryPending">0</div></div>
+        <div class="stat-mini"><small>待審請假</small><div class="v" id="admLeavePending">0</div></div>
+      </div>
+
+      <!-- 補打卡審核 -->
+      <div class="card">
+        <div class="mini-row"><h3>補打卡審核</h3><div style="display:flex;gap:6px;align-items:center"><button class="btn-sm" onclick="loadAll()">🔄</button><span class="badge warn">待處理</span></div></div>
+        <div id="admClockFixList"></div>
+      </div>
+
+      <!-- 薪資審核 -->
+      <div class="card">
+        <div class="mini-row"><h3>薪資審核</h3><div style="display:flex;gap:6px;align-items:center"><button class="btn-sm" onclick="loadAll()">🔄</button><span class="badge warn">管理</span></div></div>
+        <div class="field-row" style="margin-bottom:10px">
+          <div><label class="label">員編</label><input type="text" id="salaryEmpId" placeholder="ANG0601"></div>
+          <div><label class="label">月份</label><input type="month" id="salaryMonth"></div>
         </div>
-        <div class="form-row">
-          <label class="form-label">通知內容</label>
-          <textarea class="form-input" id="notify-content" rows="4" placeholder="請輸入通知內容…" style="resize:none"></textarea>
+        <button class="btn-ghost" style="margin-bottom:10px" onclick="loadSalaryDraft()">📊 載入薪資計算</button>
+        <div id="salaryDraftArea"></div>
+        <div id="salaryExtrasList"></div>
+        <div class="tool-grid-3" id="salaryAddBtns" style="display:none">
+          <button class="btn-sm" onclick="addSalaryExtra('獎金')">＋ 獎金</button>
+          <button class="btn-sm" onclick="addSalaryExtra('津貼')">＋ 津貼</button>
+          <button class="btn-sm" onclick="addSalaryExtra('扣款')">＋ 扣款</button>
+          <button class="btn-sm" onclick="addSalaryExtra('法扣')">＋ 法扣</button>
+          <button class="btn-sm" onclick="addSalaryExtra('行政費用')">＋ 行政費</button>
+          <button class="btn-sm" onclick="addSalaryExtra('稅金')">＋ 稅金</button>
         </div>
-        <button class="btn-primary" onclick="sendNotification()"><i class="fa-solid fa-paper-plane"></i>  發送通知</button>
+        <button class="btn-main" id="btnSubmitSalary" style="display:none;margin-top:10px" onclick="submitSalaryReview()">送出薪資審核</button>
+        <div id="admSalaryList" style="margin-top:10px"></div>
       </div>
-    </div>
-    <div class="section-title">📋 通知紀錄</div>
-    <div id="notify-history-list">
-      <div class="empty-state"><i class="fa-regular fa-bell-slash"></i>尚無通知紀錄</div>
-    </div>
+
+      <!-- 請假審核 -->
+      <div class="card">
+        <div class="mini-row"><h3>請假審核</h3><div style="display:flex;gap:6px;align-items:center"><button class="btn-sm" onclick="loadAll()">🔄</button><span class="badge warn">待處理</span></div></div>
+        <div id="admLeaveList"></div>
+      </div>
+
+      <!-- 資料接收審核 -->
+      <div class="card">
+        <div class="mini-row"><h3>資料接收審核</h3><div style="display:flex;gap:6px;align-items:center"><button class="btn-sm" onclick="loadAll()">🔄</button><span class="badge warn">待處理</span></div></div>
+        <div id="admUploadList"></div>
+      </div>
+
+      <!-- 留言審核 -->
+      <div class="card">
+        <div class="mini-row"><h3>留言審核</h3><div style="display:flex;gap:6px;align-items:center"><button class="btn-sm" onclick="loadAll()">🔄</button><span class="badge warn">待處理</span></div></div>
+        <div id="admMessageList"></div>
+      </div>
+
+      <!-- 通知 -->
+      <div class="card"><div class="mini-row"><h3>通知發布</h3><span class="badge ok">管理</span></div><div id="admNoticeList"></div></div>
+
+      <!-- 期限 -->
+      <div class="card">
+        <div class="mini-row"><h3>班表提報期限</h3><span class="badge ok">設定</span></div>
+        <div class="field-row"><div><label class="label">下週開放</label><input type="datetime-local" id="weekOpenAt"></div><div><label class="label">下週截止</label><input type="datetime-local" id="weekCloseAt"></div></div>
+        <label class="label">下週截止提醒</label><textarea id="weekDeadlineNote"></textarea>
+        <div class="field-row"><div><label class="label">月班開放</label><input type="datetime-local" id="monthOpenAt"></div><div><label class="label">月班截止</label><input type="datetime-local" id="monthCloseAt"></div></div>
+        <label class="label">月班截止提醒</label><textarea id="monthDeadlineNote"></textarea>
+        <button class="btn-main" onclick="saveDeadlineSettings()">儲存期限設定</button>
+      </div>
+
+      <!-- 寬限 -->
+      <div class="card">
+        <div class="mini-row"><h3>打卡寬限</h3><span class="badge ok">設定</span></div>
+        <div class="field-row">
+          <div><label class="label">上班前（分鐘）</label><input type="number" id="graceBeforeMin" value="15" min="0" max="60"></div>
+          <div><label class="label">下班後（分鐘）</label><input type="number" id="graceAfterMin" value="15" min="0" max="60"></div>
+        </div>
+        <button class="btn-main" onclick="saveGraceSettings()">儲存寬限設定</button>
+      </div>
+
+      <!-- 品牌 -->
+      <div class="card">
+        <div class="mini-row"><h3>Logo & Title</h3><span class="badge ok">設定</span></div>
+        <div class="field-row"><div><label class="label">主標題</label><input type="text" id="mainTitleInput" value="ANG.lo Engine"></div><div><label class="label">系統名稱</label><input type="text" id="systemNameInput" value="HR 系統"></div></div>
+        <label class="label">無圖時文字</label><input type="text" id="fallbackTextInput" value="ANG">
+        <label class="label">上傳 Logo</label><input type="file" id="logoUpload" accept="image/*" onchange="handleLogoUpload(event)">
+        <button class="btn-main" style="margin-top:10px" onclick="saveBrandSettings()">儲存品牌設定</button>
+      </div>
+
+      <!-- 歸檔 -->
+      <div class="card">
+        <div class="mini-row"><h3>資料歸檔 / 匯出</h3><span class="badge">管理</span></div>
+        <div class="tool-grid">
+          <button class="btn-ghost" onclick="archiveSheet('請假申請')">歸檔請假</button>
+          <button class="btn-ghost" onclick="archiveSheet('補打卡申請')">歸檔補卡</button>
+          <button class="btn-ghost" onclick="archiveSheet('資料接收審核')">歸檔上傳</button>
+          <button class="btn-ghost" onclick="archiveSheet('打卡原始記錄')">歸檔打卡</button>
+        </div>
+        <div class="tool-grid">
+          <button class="btn-soft" onclick="exportSheet('請假申請')">匯出請假</button>
+          <button class="btn-soft" onclick="exportSheet('補打卡申請')">匯出補卡</button>
+          <button class="btn-soft" onclick="exportSheet('資料接收審核')">匯出上傳</button>
+          <button class="btn-soft" onclick="exportSheet('打卡原始記錄')">匯出打卡</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== Creator 頁 ==================== -->
+    <section id="page-creator" class="page">
+      <div class="hero">
+        <div class="hero-top">
+          <div><div class="hello">Creator 管理</div><div class="hello-sub">審核流程、選休規則、班別、權限、系統</div></div>
+          <div class="hero-chip">Creator</div>
+        </div>
+      </div>
+
+      <!-- 審核流程 -->
+      <div class="card">
+        <div class="mini-row"><h3>審核流程設定</h3><span class="badge ok">Creator</span></div>
+        <div class="check-row"><input type="checkbox" id="chkMultiLevel" checked><label for="chkMultiLevel">啟用多級審核</label></div>
+        <label class="label">請假</label>
+        <div class="check-row"><input type="checkbox" id="chkLeaveManager" checked><label>Manager</label></div>
+        <div class="check-row"><input type="checkbox" id="chkLeaveAdmin"><label>Admin</label></div>
+        <label class="label">補打卡</label>
+        <div class="check-row"><input type="checkbox" id="chkClockfixManager" checked><label>Manager</label></div>
+        <div class="check-row"><input type="checkbox" id="chkClockfixAdmin"><label>Admin</label></div>
+        <label class="label">上傳資料</label>
+        <div class="check-row"><input type="checkbox" id="chkUploadManager" checked><label>Manager</label></div>
+        <div class="check-row"><input type="checkbox" id="chkUploadAdmin"><label>Admin</label></div>
+        <label class="label">留言</label>
+        <div class="check-row"><input type="checkbox" id="chkMsgManager" checked><label>Manager</label></div>
+        <div class="check-row"><input type="checkbox" id="chkMsgAdmin"><label>Admin</label></div>
+        <label class="label">薪資</label>
+        <div class="check-row"><input type="checkbox" id="chkSalaryManager"><label>Manager</label></div>
+        <div class="check-row"><input type="checkbox" id="chkSalaryAdmin" checked><label>Admin</label></div>
+        <button class="btn-main" style="margin-top:10px" onclick="saveApproverSettings()">儲存審核流程</button>
+      </div>
+
+      <!-- 選休規則 -->
+      <div class="card">
+        <div class="mini-row"><h3>選休規則</h3><span class="badge ok">永久套用</span></div>
+        <div class="notice-item" style="margin-bottom:10px"><div class="item-title">設定一次，自動套用到往後每一期</div></div>
+        <label class="label">模式</label>
+        <div class="tool-grid" style="margin-bottom:10px">
+          <button class="btn-main" id="btnModeWeek" onclick="setPreselectMode('week')">📅 週選休</button>
+          <button class="btn-ghost" id="btnModeMonth" onclick="setPreselectMode('month')">🗓️ 月選休</button>
+        </div>
+        <div id="weekRuleBox">
+          <label class="label">開放</label>
+          <div class="field-row"><select id="weekOpenDay"><option value="一">週一</option><option value="二">週二</option><option value="三" selected>週三</option><option value="四">週四</option><option value="五">週五</option><option value="六">週六</option><option value="日">週日</option></select><input type="time" id="weekOpenTime" value="20:00"></div>
+          <label class="label">截止</label>
+          <div class="field-row"><select id="weekCloseDay"><option value="一">週一</option><option value="二">週二</option><option value="三">週三</option><option value="四">週四</option><option value="五" selected>週五</option><option value="六">週六</option><option value="日">週日</option></select><input type="time" id="weekCloseTime" value="18:00"></div>
+          <label class="label">發佈</label>
+          <div class="field-row"><select id="weekPublishDay"><option value="一">週一</option><option value="二">週二</option><option value="三">週三</option><option value="四">週四</option><option value="五">週五</option><option value="六" selected>週六</option><option value="日">週日</option></select><input type="time" id="weekPublishTime" value="10:00"></div>
+        </div>
+        <div id="monthRuleBox" class="hidden">
+          <label class="label">開放（每月幾號）</label>
+          <div class="field-row"><select id="monthOpenDay"></select><input type="time" id="monthOpenTime" value="09:00"></div>
+          <label class="label">截止</label>
+          <div class="field-row"><select id="monthCloseDay"></select><input type="time" id="monthCloseTime" value="18:00"></div>
+          <label class="label">發佈</label>
+          <div class="field-row"><select id="monthPublishDay"></select><input type="time" id="monthPublishTime" value="10:00"></div>
+        </div>
+        <button class="btn-main" style="margin-top:10px" onclick="savePreselectSettingsFromUI()">儲存選休規則</button>
+      </div>
+
+      <!-- 班別設定 -->
+      <div class="card">
+        <div class="mini-row"><h3>班別設定</h3><span class="badge ok">Creator</span></div>
+        <div class="check-row"><input type="checkbox" id="chkMixedMode"><label for="chkMixedMode">啟用混合班（不固定班別）</label></div>
+        <div id="shiftListBox"></div>
+        <button class="btn-ghost" style="margin-bottom:10px" onclick="addShiftRow()">＋ 新增班別</button>
+        <button class="btn-main" onclick="saveShiftTypes()">儲存班別設定</button>
+      </div>
+
+      <!-- 權限總覽 -->
+      <div class="card">
+        <div class="mini-row"><h3>權限管理</h3><span class="badge">總覽</span></div>
+        <div class="notice-item"><div class="item-title">Manager</div><div class="item-meta">排班、請假審核、資料審核、通知、留言</div></div>
+        <div class="notice-item"><div class="item-title">Admin</div><div class="item-meta">打卡、補卡審核、薪資審核、期限、品牌、歸檔</div></div>
+        <div class="notice-item"><div class="item-title">Creator</div><div class="item-meta">審核流程、選休規則、班別、權限、系統 + 全部功能</div></div>
+      </div>
+    </section>
+
+    <!-- ==================== Manager 頁 ==================== -->
+    <section id="page-manager" class="page">
+      <div class="hero">
+        <div class="hero-top">
+          <div><div class="hello">Manager 管理</div><div class="hello-sub">排班、請假審核、資料審核、通知、留言</div></div>
+          <div class="hero-chip">Manager</div>
+        </div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-mini"><small>待審請假</small><div class="v" id="mgrLeavePending">0</div></div>
+        <div class="stat-mini"><small>待審資料</small><div class="v" id="mgrUploadPending">0</div></div>
+        <div class="stat-mini"><small>待審留言</small><div class="v" id="mgrMsgPending">0</div></div>
+      </div>
+      <div class="card"><div class="mini-row"><h3>請假審核</h3><div style="display:flex;gap:6px;align-items:center"><button class="btn-sm" onclick="loadAll()">🔄</button><span class="badge warn">待處理</span></div></div><div id="mgrLeaveList"></div></div>
+      <div class="card"><div class="mini-row"><h3>資料接收審核</h3><div style="display:flex;gap:6px;align-items:center"><button class="btn-sm" onclick="loadAll()">🔄</button><span class="badge warn">待處理</span></div></div><div id="mgrUploadList"></div></div>
+      <div class="card"><div class="mini-row"><h3>留言審核</h3><div style="display:flex;gap:6px;align-items:center"><button class="btn-sm" onclick="loadAll()">🔄</button><span class="badge warn">待處理</span></div></div><div id="mgrMessageList"></div></div>
+      <div class="card"><div class="mini-row"><h3>通知發布</h3><span class="badge ok">管理</span></div><div id="mgrNoticeList"></div></div>
+      <div class="card"><div class="mini-row"><h3>排班發布</h3><span class="badge ok">管理</span></div><div id="mgrScheduleList"></div></div>
+    </section>
+
+    <!-- ==================== Data 頁 ==================== -->
+    <section id="page-data" class="page">
+      <div class="hero"><div class="hero-top"><div><div class="hello">資料夾</div><div class="hello-sub">員工提交的檔案</div></div></div></div>
+      <div class="card">
+        <div class="mini-row"><h3>HR 提交暫存</h3><span class="badge ok">Drive</span></div>
+        <div class="notice-item"><div class="item-title">📁 點擊下方按鈕開啟 Google Drive 資料夾</div><div class="item-meta">員工上傳的補卡證明、醫生證明、收據等檔案都在這裡。</div></div>
+        <button class="btn-main" onclick="window.open('https://drive.google.com/drive/folders/10ED2Bd72agzl6ZyuQYFAHdl0de02zgv0','_blank')">開啟資料夾</button>
+      </div>
+    </section>
+
+    <!-- ==================== 無權限 ==================== -->
+    <section id="page-noperm" class="page">
+      <div class="hero"><div class="hero-top"><div><div class="hello">無管理權限</div></div></div></div>
+    </section>
+
   </div>
 
-  <!-- ════════════════════════════════════════════════
-       PAGE: SCHEDULE 排班管理
-  ════════════════════════════════════════════════ -->
-  <div class="page" id="page-schedule">
-    <div class="page-header">
-      <div class="page-header-icon"><i class="fa-solid fa-calendar-days"></i></div>
-      <div class="page-header-text">
-        <h2>排班管理</h2>
-        <p>管理員工班表與排班</p>
-      </div>
-    </div>
-    <div class="card">
-      <div class="wip-card">
-        <div class="wip-icon">🗓️</div>
-        <div class="wip-title">排班管理</div>
-        <div class="wip-sub">功能開發中，敬請期待</div>
-      </div>
-    </div>
+  <!-- ===== L 型圓形導航 ===== -->
+  <div class="fab-wrap" id="fabWrap">
+    <button class="fab-sat sat-creator" id="fab-creator" onclick="navTo('creator')"><i class="fa-solid fa-crown"></i><span>Creator</span></button>
+    <button class="fab-sat sat-admin active" id="fab-admin" onclick="navTo('admin')"><i class="fa-solid fa-shield-halved"></i><span>Admin</span><div class="fab-badge" id="badgeAdm"></div></button>
+    <button class="fab-sat sat-data" id="fab-data" onclick="navTo('data')"><i class="fa-solid fa-folder-open"></i><span>Data</span></button>
+    <button class="fab-sat sat-manager" id="fab-manager" onclick="navTo('manager')"><i class="fa-solid fa-users-gear"></i><span>Manager</span><div class="fab-badge" id="badgeMgr"></div></button>
+    <button class="fab-home" id="fab-home" onclick="handleHomeClick()"><i class="fa-solid fa-house"></i></button>
   </div>
 
-  <!-- ════════════════════════════════════════════════
-       PAGE: DEADLINE 期限設定
-  ════════════════════════════════════════════════ -->
-  <div class="page" id="page-deadline">
-    <div class="page-header">
-      <div class="page-header-icon"><i class="fa-solid fa-hourglass-half"></i></div>
-      <div class="page-header-text">
-        <h2>期限設定</h2>
-        <p>設定各項申請截止期限</p>
-      </div>
-    </div>
-    <div class="card">
-      <div class="wip-card">
-        <div class="wip-icon">⏳</div>
-        <div class="wip-title">期限設定</div>
-        <div class="wip-sub">功能開發中，敬請期待</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ════════════════════════════════════════════════
-       PAGE: BRAND 品牌設定
-  ════════════════════════════════════════════════ -->
-  <div class="page" id="page-brand">
-    <div class="page-header">
-      <div class="page-header-icon"><i class="fa-solid fa-palette"></i></div>
-      <div class="page-header-text">
-        <h2>品牌設定</h2>
-        <p>自訂企業品牌視覺</p>
-      </div>
-    </div>
-    <div class="card">
-      <div class="wip-card">
-        <div class="wip-icon">🎨</div>
-        <div class="wip-title">品牌設定</div>
-        <div class="wip-sub">功能開發中，敬請期待</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ════════════════════════════════════════════════
-       PAGE: ARCHIVE 歸檔
-  ════════════════════════════════════════════════ -->
-  <div class="page" id="page-archive">
-    <div class="page-header">
-      <div class="page-header-icon"><i class="fa-solid fa-box-archive"></i></div>
-      <div class="page-header-text">
-        <h2>歸檔</h2>
-        <p>查閱與管理歷史資料</p>
-      </div>
-    </div>
-    <div class="card">
-      <div class="wip-card">
-        <div class="wip-icon">🗄️</div>
-        <div class="wip-title">歸檔管理</div>
-        <div class="wip-sub">功能開發中，敬請期待</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Bottom Navigation ──────────────────────────── -->
-  <nav id="bottom-nav">
-    <button class="nav-btn active" id="nav-home" onclick="switchPage('home')">
-      <i class="fa-solid fa-house"></i><span>首頁</span>
-    </button>
-    <button class="nav-btn" id="nav-leave" onclick="switchPage('leave')">
-      <i class="fa-solid fa-calendar-check"></i><span>請假</span>
-    </button>
-    <button class="nav-btn" id="nav-clockfix" onclick="switchPage('clockfix')">
-      <i class="fa-solid fa-clock-rotate-left"></i><span>補卡</span>
-    </button>
-    <button class="nav-btn" id="nav-upload" onclick="switchPage('upload')">
-      <i class="fa-solid fa-file-circle-check"></i><span>資料</span>
-    </button>
-    <button class="nav-btn" id="nav-message" onclick="switchPage('message')">
-      <i class="fa-solid fa-comments"></i><span>留言</span>
-    </button>
-    <button class="nav-btn" id="nav-salary" onclick="switchPage('salary')">
-      <i class="fa-solid fa-money-check-dollar"></i><span>薪資</span>
-    </button>
-    <button class="nav-btn" id="nav-notify" onclick="switchPage('notify')">
-      <i class="fa-solid fa-bell"></i><span>通知</span>
-    </button>
-    <button class="nav-btn" id="nav-schedule" onclick="switchPage('schedule')">
-      <i class="fa-solid fa-calendar-days"></i><span>排班</span>
-    </button>
-    <button class="nav-btn" id="nav-deadline" onclick="switchPage('deadline')">
-      <i class="fa-solid fa-hourglass-half"></i><span>期限</span>
-    </button>
-    <button class="nav-btn" id="nav-brand" onclick="switchPage('brand')">
-      <i class="fa-solid fa-palette"></i><span>品牌</span>
-    </button>
-    <button class="nav-btn" id="nav-archive" onclick="switchPage('archive')">
-      <i class="fa-solid fa-box-archive"></i><span>歸檔</span>
-    </button>
-  </nav>
-
-  <!-- Toast -->
-  <div id="toast"></div>
-
-  <!-- ══════════════════════════════════════════════════
-       JavaScript
-  ══════════════════════════════════════════════════ -->
   <script>
-    // ── State ────────────────────────────────────────
-    var adminId   = '';
-    var adminName = '';
-    var adminRole = '';  // '主管' | '人資' | '創辦人'
-
-    // ── Role → pages mapping ─────────────────────────
-    // Manager (主管): Handles day-to-day HR tasks — leave, uploads, messages, notifications, scheduling
-    // Admin (人資):   Handles HR administration — clock-fix, salary review, system settings, archival
-    //                 Also reviews leave, uploads, and messages like Manager
-    // Creator (創辦人): Full access to all pages (superset of Manager + Admin)
-    var ROLE_PAGES = {
-      '主管':   ['home', 'leave', 'upload', 'message', 'notify', 'schedule'],
-      '人資':   ['home', 'leave', 'clockfix', 'upload', 'message', 'salary', 'deadline', 'brand', 'archive'],
-      '創辦人': ['home', 'leave', 'clockfix', 'upload', 'message', 'salary', 'notify', 'schedule', 'deadline', 'brand', 'archive']
+    var CTX={
+      id:'<?= typeof id!=="undefined"?id:"" ?>',
+      token:'<?= typeof token!=="undefined"?token:"" ?>',
+      role:'<?= typeof role!=="undefined"?role:"" ?>',
+      name:'<?= typeof name!=="undefined"?name:"" ?>',
+      nickname:'<?= typeof nickname!=="undefined"?nickname:"" ?>',
+      webAppUrl:'<?= typeof webAppUrl!=="undefined"?webAppUrl:"" ?>'
     };
+    var UID=String(CTX.id||'').trim().toUpperCase();
+    var UTOKEN=String(CTX.token||'').trim();
+    var UROLE=String(CTX.role||'Employee').trim();
+    var logoDataUrl='';
+    var mgrData={},admData={},crtData={};
+    var currentPage='admin';
+    var salaryDraft=null;
+    var salaryExtras=[];
+    var preselectMode='week';
+    var shiftRows=[];
 
-    // ── Role → accent color / gradient ───────────────
-    var ROLE_STYLE = {
-      '主管':   { color: '#667eea', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
-      '人資':   { color: '#f5576c', gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
-      '創辦人': { color: '#43e97b', gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' }
-    };
+    function qs(id){return document.getElementById(id)}
+    function setText(id,v){var e=qs(id);if(e)e.innerText=v==null?'':String(v)}
+    function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+    function gas(){return!!(window.google&&google.script&&google.script.run)}
+    function ok(m){Swal.fire('成功',m||'完成','success')}
+    function err(m){Swal.fire('錯誤',m||'失敗','error')}
+    function warn(m){Swal.fire('提醒',m||'','warning')}
+    function loading(m){Swal.fire({title:m||'處理中...',allowOutsideClick:false,didOpen:function(){Swal.showLoading()}})}
+    function statusCls(s){return/已通過|approved/.test(s)?'ok':/已退回|rejected/.test(s)?'danger':'warn'}
+    function statusLbl(s){return/已通過|approved/.test(s)?'已通過':/已退回|rejected/.test(s)?'已退回':'待審核'}
 
-    // ── Quick action definitions ──────────────────────
-    var QUICK_DEFS = {
-      leave:    { icon: 'fa-calendar-check',       label: '請假審核' },
-      clockfix: { icon: 'fa-clock-rotate-left',    label: '補卡審核' },
-      upload:   { icon: 'fa-file-circle-check',    label: '資料審核' },
-      message:  { icon: 'fa-comments',             label: '留言審核' },
-      salary:   { icon: 'fa-money-check-dollar',   label: '薪資審核' },
-      notify:   { icon: 'fa-bell',                 label: '通知管理' },
-      schedule: { icon: 'fa-calendar-days',        label: '排班管理' },
-      deadline: { icon: 'fa-hourglass-half',       label: '期限設定' },
-      brand:    { icon: 'fa-palette',              label: '品牌設定' },
-      archive:  { icon: 'fa-box-archive',          label: '歸  檔' }
-    };
+    // ==================== L型導航 ====================
 
-    // ── GAS call wrapper ─────────────────────────────
-    // Calls handleAdminRequest(params) on the server side.
-    // Note: google.script.run cannot invoke doPost (HTTP-only);
-    // the backend must expose a named function handleAdminRequest.
-    function gasCall(params, callback) {
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(function(result) { callback(null, result); })
-          .withFailureHandler(function(err)    { callback(err, null);   })
-          .handleAdminRequest(params);
-      } else {
-        // Development stub – returns demo data
-        setTimeout(function() { callback(null, stubResponse(params)); }, 600);
-      }
+    function getAllowed(){
+      if(UROLE==='Creator')return['admin','creator','manager','data'];
+      if(UROLE==='Admin')return['admin','manager','data'];
+      if(UROLE==='Manager')return['manager','data'];
+      return[];
     }
 
-    // Stub data for development preview
-    function stubResponse(params) {
-      if (params.action === 'getPendingCounts') {
-        return { leave: 3, clockfix: 1, upload: 5, message: 2 };
-      }
-      if (params.action === 'getReviewList') {
-        return [
-          { rowIndex: 2, name: '王小明', date: '2025-06-01', type: '特休', days: 2, reason: '家庭因素', status: '待審核' },
-          { rowIndex: 3, name: '陳美玲', date: '2025-06-03', type: '病假', days: 1, reason: '身體不適', status: '待審核' }
-        ];
-      }
-      if (params.action === 'approve' || params.action === 'reject') {
-        return { success: true };
-      }
-      if (params.action === 'sendNotification') {
-        return { success: true };
-      }
-      return {};
+    function navTo(page){
+      var a=getAllowed();
+      if(a.indexOf(page)===-1)page='noperm';
+      currentPage=page;
+      document.querySelectorAll('.page').forEach(function(e){e.classList.remove('active')});
+      document.querySelectorAll('.fab-sat').forEach(function(e){e.classList.remove('active')});
+      var pe=qs('page-'+page);if(pe)pe.classList.add('active');
+      var fe=qs('fab-'+page);if(fe)fe.classList.add('active');
     }
 
-    // ── URL param helpers ─────────────────────────────
-    function getParam(key) {
-      var q = window.location.search.substring(1);
-      var pairs = q.split('&');
-      for (var i = 0; i < pairs.length; i++) {
-        var kv = pairs[i].split('=');
-        if (decodeURIComponent(kv[0]) === key) {
-          return kv.length > 1 ? decodeURIComponent(kv[1].replace(/\+/g, ' ')) : '';
+    function handleHomeClick(){
+      var hb=qs('fab-home');
+      if(currentPage==='admin'){
+        if(['Creator','Admin','Manager'].indexOf(UROLE)>-1){
+          hb.classList.add('swap');setTimeout(function(){hb.classList.remove('swap')},400);
+          goEmployee();
         }
-      }
-      return null;
+      }else{navTo('admin')}
     }
 
-    // ── Apply role styling ────────────────────────────
-    function applyRoleStyle(role) {
-      var s = ROLE_STYLE[role] || ROLE_STYLE['主管'];
-      document.documentElement.style.setProperty('--accent', s.color);
-      document.documentElement.style.setProperty('--accent-gradient', s.gradient);
+    function goEmployee(){
+      var base=String(CTX.webAppUrl||window.location.href.split('?')[0]);
+      window.location.href=base+'?page=employee&id='+UID+'&token='+UTOKEN;
     }
 
-    // ── Init ─────────────────────────────────────────
-    function init() {
-      adminId   = getParam('id')   || 'demo';
-      adminName = getParam('name') || '管理員';
-      adminRole = getParam('role') || '主管';
-
-      // Validate role
-      if (!ROLE_PAGES[adminRole]) adminRole = '主管';
-
-      applyRoleStyle(adminRole);
-
-      // Update header
-      document.getElementById('header-title').textContent = '管理後台';
-      document.getElementById('header-subtitle').textContent = adminName + '・' + adminRole;
-
-      // Update welcome card
-      document.getElementById('welcome-name').textContent = '👋 歡迎，' + adminName;
-      document.getElementById('role-chip').textContent = adminRole;
-
-      // Show/hide nav buttons
-      var allowedPages = ROLE_PAGES[adminRole];
-      var allNavBtns = document.querySelectorAll('#bottom-nav .nav-btn');
-      allNavBtns.forEach(function(btn) {
-        var page = btn.id.replace('nav-', '');
-        btn.style.display = allowedPages.indexOf(page) !== -1 ? '' : 'none';
-      });
-
-      // Build quick actions (exclude 'home')
-      var qa = document.getElementById('quick-actions');
-      qa.innerHTML = '';
-      allowedPages.forEach(function(p) {
-        if (p === 'home') return;
-        var def = QUICK_DEFS[p];
-        if (!def) return;
-        var btn = document.createElement('button');
-        btn.className = 'quick-btn';
-        btn.innerHTML = '<i class="fa-solid ' + def.icon + '"></i><span>' + def.label + '</span>';
-        btn.onclick = (function(page) { return function() { switchPage(page); }; })(p);
-        qa.appendChild(btn);
-      });
-
-      // Load homepage data
-      loadHomepage();
+    function applyVisibility(){
+      var a=getAllowed();
+      var ids=['admin','creator','manager','data'];
+      ids.forEach(function(id){var e=qs('fab-'+id);if(e)e.classList.toggle('hidden',a.indexOf(id)===-1)});
+      a.length===0?navTo('noperm'):navTo('admin');
     }
 
-    // ── Switch page ───────────────────────────────────
-    function switchPage(name) {
-      // Permission check
-      var allowed = ROLE_PAGES[adminRole] || [];
-      if (name !== 'home' && allowed.indexOf(name) === -1) {
-        showToast('您無此功能的存取權限');
-        return;
-      }
+    // ==================== 渲染 ====================
 
-      document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
-      document.querySelectorAll('#bottom-nav .nav-btn').forEach(function(b) { b.classList.remove('active'); });
-
-      var target = document.getElementById('page-' + name);
-      if (target) target.classList.add('active');
-
-      var navBtn = document.getElementById('nav-' + name);
-      if (navBtn) navBtn.classList.add('active');
-
-      // Lazy-load review lists
-      if (['leave', 'clockfix', 'upload', 'message', 'salary'].indexOf(name) !== -1) {
-        loadReviewList(name);
-      }
-    }
-
-    // ── Load homepage ─────────────────────────────────
-    function loadHomepage() {
-      ['leave', 'clockfix', 'upload', 'message'].forEach(function(k) {
-        var el = document.getElementById('count-' + k);
-        el.textContent = '…';
-        el.className = 'count-num loading';
-      });
-
-      gasCall({ action: 'getPendingCounts' }, function(err, data) {
-        if (err || !data) {
-          ['leave', 'clockfix', 'upload', 'message'].forEach(function(k) {
-            var el = document.getElementById('count-' + k);
-            el.textContent = '-';
-          });
-          return;
+    function renderReviewList(tid,items,canAct){
+      var box=qs(tid);if(!box)return;
+      var list=Array.isArray(items)?items:[];
+      if(!list.length){box.innerHTML='<div class="notice-item"><div class="item-title">目前沒有資料</div></div>';return}
+      box.innerHTML=list.map(function(item,idx){
+        var step=item.currentStep?'（待：'+esc(item.currentStep)+')':'';
+        var act='';
+        if(canAct&&item.status==='pending'){
+          act='<div class="review-actions"><button class="btn-success" onclick="doReview(\''+esc(tid)+'\','+idx+',\'approved\')">通過</button><button class="btn-danger" onclick="doReview(\''+esc(tid)+'\','+idx+',\'rejected\')">退回</button></div>';
         }
-        var keys = ['leave', 'clockfix', 'upload', 'message'];
-        keys.forEach(function(k) {
-          var el = document.getElementById('count-' + k);
-          var val = data[k] !== undefined ? data[k] : 0;
-          el.textContent = val;
-          el.className = 'count-num' + (val > 0 ? ' loading' : '');
-          if (val > 0) el.style.color = 'var(--accent)';
-          else el.style.color = '#a0aec0';
-        });
-      });
-
-      // Load recent notifications (stub)
-      renderHomeNotifications([
-        { text: '系統已更新至最新版本', time: '剛剛' },
-        { text: '本月薪資計算即將截止', time: '2 小時前' },
-        { text: '3 筆請假申請等待審核', time: '昨天' }
-      ]);
-    }
-
-    function renderHomeNotifications(items) {
-      var container = document.getElementById('home-notif-list');
-      if (!items || items.length === 0) {
-        container.innerHTML = '<div class="empty-state"><i class="fa-regular fa-bell"></i>暫無通知</div>';
-        return;
-      }
-      var icons = ['fa-circle-info', 'fa-triangle-exclamation', 'fa-circle-check'];
-      container.innerHTML = items.slice(0, 3).map(function(n, i) {
-        return '<div class="notif-item">' +
-          '<div class="notif-icon"><i class="fa-solid ' + icons[i % icons.length] + '"></i></div>' +
-          '<div class="notif-body">' +
-            '<div class="notif-text">' + escapeHtml(n.text) + '</div>' +
-            '<div class="notif-time">' + escapeHtml(n.time) + '</div>' +
-          '</div></div>';
+        return'<div class="review-card"><div class="mini-row"><div class="item-title">'+esc(item.title)+'</div><span class="badge '+statusCls(item.status)+'">'+statusLbl(item.status)+step+'</span></div><div class="item-meta">'+esc(item.applicant)+'</div><div class="item-meta" style="margin-top:4px;white-space:pre-wrap">'+esc(item.desc)+'</div>'+act+'</div>';
       }).join('');
     }
 
-    // ── Load review list ──────────────────────────────
-    function loadReviewList(type) {
-      var listId = type + '-list';
-      var container = document.getElementById(listId);
-      if (!container) return;
-      container.innerHTML = '<div class="loader-wrap"><div class="spinner"></div></div>';
+    function renderPublishList(tid,items){
+      var box=qs(tid);if(!box)return;
+      var list=Array.isArray(items)?items:[];
+      if(!list.length){box.innerHTML='<div class="notice-item"><div class="item-title">目前沒有資料</div></div>';return}
+      box.innerHTML=list.map(function(i){return'<div class="notice-item"><div class="item-title">'+esc(i.title)+'</div><div class="item-meta">'+esc(i.desc||i.period||'')+'</div></div>'}).join('');
+    }
 
-      gasCall({ action: 'getReviewList', type: type }, function(err, data) {
-        if (err || !data) {
-          container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-exclamation"></i>載入失敗，請重試</div>';
-          return;
-        }
-        if (data.length === 0) {
-          container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-check"></i>目前無待審核項目</div>';
-          return;
-        }
-        container.innerHTML = data.map(function(item) {
-          return renderReviewCard(type, item);
-        }).join('');
+    // ==================== 審核 ====================
+
+    function getArr(tid){
+      var map={mgrLeaveList:'leaveReviews',mgrUploadList:'receiveReviews',mgrMessageList:'messageReviews',admClockFixList:'clockFixReviews',admSalaryList:'salaryReviews',admLeaveList:'leaveReviews',admUploadList:'receiveReviews',admMessageList:'messageReviews'};
+      var key=map[tid];if(!key)return[];
+      return tid.startsWith('mgr')?(mgrData[key]||[]):(admData[key]||[]);
+    }
+
+    function doReview(tid,idx,status){
+      var item=getArr(tid)[idx];if(!item){warn('找不到');return}
+      if(!gas()){warn('非正式環境');return}
+      loading();
+      google.script.run.withSuccessHandler(function(r){Swal.close();if(!r||!r.ok){err(r?r.message:'失敗');return}ok(r.message);loadAll()})
+        .withFailureHandler(function(e){Swal.close();err(String(e))})
+        .adminSetReviewStatus({userId:UID,token:UTOKEN,sheetName:item.sheetName,rowKey:item.rowKey,status:status});
+    }
+
+    // ==================== 薪資審核 ====================
+
+    function loadSalaryDraft(){
+      if(!gas()){warn('非正式環境');return}
+      var empId=qs('salaryEmpId').value.trim().toUpperCase();
+      var month=qs('salaryMonth').value;
+      if(!empId||!month){warn('請填入員編和月份');return}
+      loading('計算薪資中...');
+      google.script.run.withSuccessHandler(function(r){
+        Swal.close();if(!r||!r.ok){err(r?r.message:'載入失敗');return}
+        salaryDraft=r.draft;salaryExtras=[];renderSalaryDraft();
+      }).withFailureHandler(function(e){Swal.close();err(String(e))})
+        .generateSalaryDraft({userId:UID,token:UTOKEN,empId:empId,month:month});
+    }
+
+    function renderSalaryDraft(){
+      if(!salaryDraft){qs('salaryDraftArea').innerHTML='';qs('salaryAddBtns').style.display='none';qs('btnSubmitSalary').style.display='none';return}
+      var d=salaryDraft;
+      var h='<div class="notice-item" style="margin-bottom:10px"><div class="item-title">'+esc(d.empName)+' ('+esc(d.empId)+') — '+esc(d.month)+'</div></div>';
+      h+='<div class="salary-line"><div class="sl-label">底薪</div><input type="number" id="sfBaseSalary" value="'+d.baseSalary+'" onchange="recalcTotal()"></div>';
+      h+='<div class="salary-line"><div class="sl-label">出勤</div><div class="sl-val">'+d.workDays+'天 / '+d.workHours+'時</div></div>';
+      h+='<div class="salary-line"><div class="sl-label">加班</div><div class="sl-val">'+d.overtimeHours+'時</div></div>';
+      h+='<div class="salary-line"><div class="sl-label">加班費</div><input type="number" id="sfOvertimePay" value="'+d.overtimePay+'" onchange="recalcTotal()"></div>';
+      h+='<div class="salary-line"><div class="sl-label">餐費</div><input type="number" id="sfMeal" value="'+d.mealAllowance+'" onchange="recalcTotal()"></div>';
+      h+='<div class="salary-line"><div class="sl-label">遲到</div><div class="sl-val negative">'+d.lateMinutes+'分 = -$'+d.lateDeduction+'</div><input type="number" id="sfLateDed" value="'+d.lateDeduction+'" onchange="recalcTotal()" style="width:80px"></div>';
+      h+='<div class="salary-line"><div class="sl-label">請假扣</div><div class="sl-val negative">'+d.leaveDays+'天 = -$'+d.leaveDeduction+'</div><input type="number" id="sfLeaveDed" value="'+d.leaveDeduction+'" onchange="recalcTotal()" style="width:80px"></div>';
+      if(d.leaveDetail&&d.leaveDetail.length){h+='<div style="padding:6px 10px;font-size:11px;color:var(--muted)">';d.leaveDetail.forEach(function(l){h+=esc(l.type)+' '+l.days+'天 -$'+l.deduction+'<br>'});h+='</div>'}
+      h+='<div id="salaryTotalLine" class="salary-line" style="background:var(--emp-soft);border:1px solid rgba(var(--emp-rgb),.15)"><div class="sl-label" style="color:var(--emp-deep)">合計</div><div class="sl-val" id="sfTotal" style="font-size:18px;color:var(--emp-deep)">$0</div></div>';
+      qs('salaryDraftArea').innerHTML=h;qs('salaryAddBtns').style.display='';qs('btnSubmitSalary').style.display='';renderSalaryExtras();recalcTotal();
+    }
+
+    function addSalaryExtra(type){
+      salaryExtras.push({type:type,name:'',amount:0,isDeduct:['扣款','法扣','行政費用','稅金'].indexOf(type)>-1});
+      renderSalaryExtras();
+    }
+    function removeSalaryExtra(idx){salaryExtras.splice(idx,1);renderSalaryExtras();recalcTotal()}
+
+    function renderSalaryExtras(){
+      var h='';var types=['獎金','津貼','扣款','法扣','行政費用','稅金'];
+      salaryExtras.forEach(function(e,idx){
+        var sel='<select onchange="salaryExtras['+idx+'].type=this.value;salaryExtras['+idx+'].isDeduct=[\'扣款\',\'法扣\',\'行政費用\',\'稅金\'].indexOf(this.value)>-1;recalcTotal()">';
+        types.forEach(function(t){sel+='<option'+(t===e.type?' selected':'')+'>'+t+'</option>'});sel+='</select>';
+        h+='<div class="extra-row">'+sel+'<input type="text" placeholder="名稱" value="'+esc(e.name)+'" onchange="salaryExtras['+idx+'].name=this.value" style="flex:1"><span style="font-weight:900">$</span><input type="number" value="'+e.amount+'" onchange="salaryExtras['+idx+'].amount=Number(this.value);recalcTotal()" style="width:80px"><button class="del-btn" onclick="removeSalaryExtra('+idx+')">✕</button></div>';
       });
+      qs('salaryExtrasList').innerHTML=h;
     }
 
-    function renderReviewCard(type, item) {
-      var meta = buildMeta(type, item);
-      return '<div class="review-item" id="review-' + type + '-' + item.rowIndex + '">' +
-        '<div class="review-item-header">' +
-          '<span class="review-item-name">' + escapeHtml(item.name || '') + '</span>' +
-          '<span class="badge badge-pending">' + escapeHtml(item.status || '待審核') + '</span>' +
-        '</div>' +
-        '<div class="review-item-date">' + escapeHtml(item.date || '') + '</div>' +
-        '<div class="review-item-meta">' + meta + '</div>' +
-        '<div class="review-actions">' +
-          '<button class="btn-approve" onclick="approveItem(\'' + type + '\',' + item.rowIndex + ')">✓ 核准</button>' +
-          '<button class="btn-reject"  onclick="rejectItem(\'' + type + '\',' + item.rowIndex + ')">✕ 拒絕</button>' +
-        '</div>' +
-      '</div>';
+    function recalcTotal(){
+      if(!salaryDraft)return;
+      var b=Number((qs('sfBaseSalary')||{}).value||0),ot=Number((qs('sfOvertimePay')||{}).value||0),ml=Number((qs('sfMeal')||{}).value||0);
+      var ld=Number((qs('sfLateDed')||{}).value||0),lv=Number((qs('sfLeaveDed')||{}).value||0);
+      var ep=0,em=0;salaryExtras.forEach(function(e){if(e.isDeduct)em+=Math.abs(Number(e.amount||0));else ep+=Number(e.amount||0)});
+      setText('sfTotal','$'+(b+ot+ml+ep-ld-lv-em).toLocaleString());
     }
 
-    function buildMeta(type, item) {
-      if (type === 'leave') {
-        return '假別：' + escapeHtml(item.type || '') + '・天數：' + escapeHtml(String(item.days || '')) + '・原因：' + escapeHtml(item.reason || '');
-      }
-      if (type === 'clockfix') {
-        return '補卡時間：' + escapeHtml(item.time || item.date || '') + '・原因：' + escapeHtml(item.reason || '');
-      }
-      if (type === 'upload') {
-        return '文件類型：' + escapeHtml(item.docType || item.type || '') + '・說明：' + escapeHtml(item.note || '');
-      }
-      if (type === 'message') {
-        return '內容：' + escapeHtml(item.content || item.reason || '');
-      }
-      if (type === 'salary') {
-        return '月份：' + escapeHtml(item.month || '') + '・金額：' + escapeHtml(String(item.amount || ''));
-      }
-      return '';
+    function submitSalaryReview(){
+      if(!gas()||!salaryDraft){warn('請先載入薪資');return}
+      loading('送出中...');
+      google.script.run.withSuccessHandler(function(r){
+        Swal.close();if(!r||!r.ok){err(r?r.message:'失敗');return}
+        ok(r.message+'\n合計：$'+r.total);salaryDraft=null;salaryExtras=[];
+        qs('salaryDraftArea').innerHTML='';qs('salaryExtrasList').innerHTML='';
+        qs('salaryAddBtns').style.display='none';qs('btnSubmitSalary').style.display='none';loadAll();
+      }).withFailureHandler(function(e){Swal.close();err(String(e))})
+        .saveSalaryReview({userId:UID,token:UTOKEN,empId:salaryDraft.empId,empName:salaryDraft.empName,month:salaryDraft.month,baseSalary:Number((qs('sfBaseSalary')||{}).value||0),overtimePay:Number((qs('sfOvertimePay')||{}).value||0),overtimeHours:salaryDraft.overtimeHours,workHours:salaryDraft.workHours,mealAllowance:Number((qs('sfMeal')||{}).value||0),lateDeduction:Number((qs('sfLateDed')||{}).value||0),leaveDeduction:Number((qs('sfLeaveDed')||{}).value||0),extras:salaryExtras});
     }
 
-    // ── Approve / Reject ──────────────────────────────
-    function approveItem(type, rowIndex) {
-      var card = document.getElementById('review-' + type + '-' + rowIndex);
-      if (card) {
-        var btns = card.querySelectorAll('button');
-        btns.forEach(function(b) { b.disabled = true; });
-      }
-      gasCall({ action: 'approve', type: type, rowIndex: rowIndex, adminId: adminId }, function(err, data) {
-        if (err || !data || !data.success) {
-          showToast('操作失敗，請重試');
-          if (card) card.querySelectorAll('button').forEach(function(b) { b.disabled = false; });
-          return;
-        }
-        if (card) {
-          card.style.opacity = '0.5';
-          var badge = card.querySelector('.badge');
-          if (badge) { badge.textContent = '已核准'; badge.className = 'badge badge-approved'; }
-          card.querySelectorAll('.review-actions').forEach(function(a) { a.remove(); });
-        }
-        showToast('✓ 已核准');
+    // ==================== 期限 / 品牌 / 歸檔 / 寬限 ====================
+
+    function saveDeadlineSettings(){
+      if(!gas())return warn('非正式環境');loading('儲存中...');
+      google.script.run.withSuccessHandler(function(r){Swal.close();r&&r.ok?ok(r.message):err(r?r.message:'失敗')}).withFailureHandler(function(e){Swal.close();err(String(e))})
+        .saveDeadlineSettings({userId:UID,token:UTOKEN,weekOpenAt:qs('weekOpenAt').value,weekCloseAt:qs('weekCloseAt').value,weekDeadlineNote:qs('weekDeadlineNote').value,monthOpenAt:qs('monthOpenAt').value,monthCloseAt:qs('monthCloseAt').value,monthDeadlineNote:qs('monthDeadlineNote').value});
+    }
+
+    function saveGraceSettings(){
+      if(!gas())return warn('非正式環境');loading('儲存中...');
+      google.script.run.withSuccessHandler(function(r){Swal.close();r&&r.ok?ok(r.message):err(r?r.message:'失敗')}).withFailureHandler(function(e){Swal.close();err(String(e))})
+        .saveSystemSettings_({userId:UID,token:UTOKEN,settings:{clock_grace_before:qs('graceBeforeMin').value,clock_grace_after:qs('graceAfterMin').value}});
+    }
+
+    function handleLogoUpload(e){var f=e.target.files&&e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(ev){logoDataUrl=ev.target.result||''};r.readAsDataURL(f)}
+
+    function saveBrandSettings(){
+      if(!gas())return warn('非正式環境');loading('儲存中...');
+      google.script.run.withSuccessHandler(function(r){Swal.close();r&&r.ok?ok(r.message):err(r?r.message:'失敗')}).withFailureHandler(function(e){Swal.close();err(String(e))})
+        .saveBrandSettings({userId:UID,token:UTOKEN,logoDataUrl:logoDataUrl,fallbackText:qs('fallbackTextInput').value.trim(),mainTitle:qs('mainTitleInput').value.trim(),systemName:qs('systemNameInput').value.trim()});
+    }
+
+    function archiveSheet(name){if(!gas())return;loading('歸檔中...');google.script.run.withSuccessHandler(function(r){Swal.close();r&&r.ok?ok(r.message):err(r?r.message:'失敗')}).withFailureHandler(function(e){Swal.close();err(String(e))}).archiveOldRecords({userId:UID,token:UTOKEN,sheetName:name})}
+    function exportSheet(name){if(!gas())return;loading('匯出中...');google.script.run.withSuccessHandler(function(r){Swal.close();if(!r||!r.ok){err(r?r.message:'失敗');return}Swal.fire({title:'匯出完成',html:'<a href="'+r.fileUrl+'" target="_blank">開啟檔案</a>',icon:'success'})}).withFailureHandler(function(e){Swal.close();err(String(e))}).exportArchivedToDrive({userId:UID,token:UTOKEN,sheetName:name})}
+
+    // ==================== 選休設定 ====================
+
+    function initMonthSelects(){
+      ['monthOpenDay','monthCloseDay','monthPublishDay'].forEach(function(id){
+        var el=qs(id);if(!el)return;el.innerHTML='';
+        for(var d=1;d<=31;d++){var o=document.createElement('option');o.value=d;o.textContent=d+'號';el.appendChild(o)}
       });
+      if(qs('monthOpenDay'))qs('monthOpenDay').value='20';
+      if(qs('monthCloseDay'))qs('monthCloseDay').value='25';
+      if(qs('monthPublishDay'))qs('monthPublishDay').value='27';
     }
 
-    function rejectItem(type, rowIndex) {
-      var card = document.getElementById('review-' + type + '-' + rowIndex);
-      if (card) {
-        var btns = card.querySelectorAll('button');
-        btns.forEach(function(b) { b.disabled = true; });
+    function setPreselectMode(m){
+      preselectMode=m;
+      qs('btnModeWeek').className=m==='week'?'btn-main':'btn-ghost';
+      qs('btnModeMonth').className=m==='month'?'btn-main':'btn-ghost';
+      qs('weekRuleBox').classList.toggle('hidden',m!=='week');
+      qs('monthRuleBox').classList.toggle('hidden',m!=='month');
+    }
+
+    function applyPreselectUI(s){
+      if(!s)return;setPreselectMode(s.mode||'week');
+      function pw(v){var m=String(v||'').match(/^([日一二三四五六])\s*(\d{1,2}:\d{2})$/);return m?{d:m[1],t:m[2]}:{d:'三',t:'20:00'}}
+      function pm(v){var m=String(v||'').match(/^(\d{1,2})\s*(\d{1,2}:\d{2})$/);return m?{d:m[1],t:m[2]}:{d:'20',t:'09:00'}}
+      var wo=pw(s.weekOpen),wc=pw(s.weekClose),wp=pw(s.weekPublish);
+      if(qs('weekOpenDay'))qs('weekOpenDay').value=wo.d;if(qs('weekOpenTime'))qs('weekOpenTime').value=wo.t;
+      if(qs('weekCloseDay'))qs('weekCloseDay').value=wc.d;if(qs('weekCloseTime'))qs('weekCloseTime').value=wc.t;
+      if(qs('weekPublishDay'))qs('weekPublishDay').value=wp.d;if(qs('weekPublishTime'))qs('weekPublishTime').value=wp.t;
+      var mo=pm(s.monthOpen),mc=pm(s.monthClose),mp=pm(s.monthPublish);
+      if(qs('monthOpenDay'))qs('monthOpenDay').value=mo.d;if(qs('monthOpenTime'))qs('monthOpenTime').value=mo.t;
+      if(qs('monthCloseDay'))qs('monthCloseDay').value=mc.d;if(qs('monthCloseTime'))qs('monthCloseTime').value=mc.t;
+      if(qs('monthPublishDay'))qs('monthPublishDay').value=mp.d;if(qs('monthPublishTime'))qs('monthPublishTime').value=mp.t;
+    }
+
+    function savePreselectSettingsFromUI(){
+      if(!gas())return warn('非正式環境');
+      var p={userId:UID,token:UTOKEN,mode:preselectMode};
+      p.weekOpen=(qs('weekOpenDay')?qs('weekOpenDay').value:'三')+' '+(qs('weekOpenTime')?qs('weekOpenTime').value:'20:00');
+      p.weekClose=(qs('weekCloseDay')?qs('weekCloseDay').value:'五')+' '+(qs('weekCloseTime')?qs('weekCloseTime').value:'18:00');
+      p.weekPublish=(qs('weekPublishDay')?qs('weekPublishDay').value:'六')+' '+(qs('weekPublishTime')?qs('weekPublishTime').value:'10:00');
+      p.monthOpen=(qs('monthOpenDay')?qs('monthOpenDay').value:'20')+' '+(qs('monthOpenTime')?qs('monthOpenTime').value:'09:00');
+      p.monthClose=(qs('monthCloseDay')?qs('monthCloseDay').value:'25')+' '+(qs('monthCloseTime')?qs('monthCloseTime').value:'18:00');
+      p.monthPublish=(qs('monthPublishDay')?qs('monthPublishDay').value:'27')+' '+(qs('monthPublishTime')?qs('monthPublishTime').value:'10:00');
+      loading('儲存中...');
+      google.script.run.withSuccessHandler(function(r){Swal.close();r&&r.ok?ok(r.message):err(r?r.message:'失敗')}).withFailureHandler(function(e){Swal.close();err(String(e))}).savePreselectSettings(p);
+    }
+
+    // ==================== 審核流程 ====================
+
+    function buildApprovers(pre){var a=[];if(qs('chk'+pre+'Manager')&&qs('chk'+pre+'Manager').checked)a.push('Manager');if(qs('chk'+pre+'Admin')&&qs('chk'+pre+'Admin').checked)a.push('Admin');return a.join(',')||'Manager'}
+
+    function saveApproverSettings(){
+      if(!gas())return warn('非正式環境');loading('儲存中...');
+      google.script.run.withSuccessHandler(function(r){Swal.close();r&&r.ok?ok(r.message):err(r?r.message:'失敗')}).withFailureHandler(function(e){Swal.close();err(String(e))})
+        .saveApproverSettings({userId:UID,token:UTOKEN,multi_level_review_enabled:qs('chkMultiLevel').checked?'true':'false',leave_approvers:buildApprovers('Leave'),clockfix_approvers:buildApprovers('Clockfix'),upload_approvers:buildApprovers('Upload'),message_approvers:buildApprovers('Msg'),salary_approvers:buildApprovers('Salary')});
+    }
+
+    // ==================== 班別設定 ====================
+
+    function addShiftRow(name,start,end,brk){
+      shiftRows.push({name:name||'',startTime:start||'08:00',endTime:end||'17:00',breakMinutes:brk||60});
+      renderShiftRows();
+    }
+
+    function removeShiftRow(idx){shiftRows.splice(idx,1);renderShiftRows()}
+
+    function renderShiftRows(){
+      var box=qs('shiftListBox');if(!box)return;
+      if(!shiftRows.length){box.innerHTML='<div class="notice-item"><div class="item-title">尚未建立班別</div></div>';return}
+      box.innerHTML=shiftRows.map(function(s,idx){
+        return'<div class="extra-row"><input type="text" placeholder="班別名稱" value="'+esc(s.name)+'" onchange="shiftRows['+idx+'].name=this.value" style="flex:1"><input type="time" value="'+s.startTime+'" onchange="shiftRows['+idx+'].startTime=this.value" style="width:90px"><span>～</span><input type="time" value="'+s.endTime+'" onchange="shiftRows['+idx+'].endTime=this.value" style="width:90px"><input type="number" value="'+s.breakMinutes+'" onchange="shiftRows['+idx+'].breakMinutes=Number(this.value)" style="width:50px" placeholder="休"><button class="del-btn" onclick="removeShiftRow('+idx+')">✕</button></div>';
+      }).join('');
+    }
+
+    function saveShiftTypes(){
+      if(!gas())return warn('非正式環境');
+      var valid=shiftRows.filter(function(s){return s.name.trim()});
+      if(!valid.length){warn('請至少建立一個班別');return}
+      loading('儲存中...');
+      google.script.run.withSuccessHandler(function(r){Swal.close();r&&r.ok?ok(r.message):err(r?r.message:'失敗')}).withFailureHandler(function(e){Swal.close();err(String(e))})
+        .saveShiftTypes({userId:UID,token:UTOKEN,shifts:valid,mixedMode:qs('chkMixedMode').checked});
+    }
+
+    // ==================== 徽章 ====================
+
+    function countPending(a){return(a||[]).filter(function(x){return x.status==='pending'}).length}
+    function updateBadges(){
+      var mt=countPending(mgrData.leaveReviews)+countPending(mgrData.receiveReviews)+countPending(mgrData.messageReviews);
+      var at=countPending(admData.clockFixReviews)+countPending(admData.salaryReviews);
+      var bm=qs('badgeMgr'),ba=qs('badgeAdm');
+      if(bm)bm.textContent=mt>0?mt:'';if(ba)ba.textContent=at>0?at:'';
+    }
+
+    // ==================== 資料載入 ====================
+
+    function applyMgr(r){
+      if(!r||!r.ok)return;mgrData=r;
+      setText('mgrLeavePending',countPending(r.leaveReviews));
+      setText('mgrUploadPending',countPending(r.receiveReviews));
+      setText('mgrMsgPending',countPending(r.messageReviews));
+      renderReviewList('mgrLeaveList',r.leaveReviews,true);
+      renderReviewList('mgrUploadList',r.receiveReviews,true);
+      renderReviewList('mgrMessageList',r.messageReviews,true);
+      renderPublishList('mgrNoticeList',r.noticePublishItems);
+      renderPublishList('mgrScheduleList',r.schedulePublishItems);
+      updateBadges();
+    }
+
+    function applyAdm(r){
+      if(!r||!r.ok)return;admData=r;
+      setText('admClockFixPending',countPending(r.clockFixReviews));
+      setText('admSalaryPending',countPending(r.salaryReviews));
+      setText('admLeavePending',countPending(r.leaveReviews));
+      renderReviewList('admClockFixList',r.clockFixReviews,true);
+      renderReviewList('admSalaryList',r.salaryReviews,true);
+      renderReviewList('admLeaveList',r.leaveReviews,true);
+      renderReviewList('admUploadList',r.receiveReviews,true);
+      renderReviewList('admMessageList',r.messageReviews,true);
+      renderPublishList('admNoticeList',r.noticePublishItems);
+      if(r.deadlineMap){
+        qs('weekOpenAt').value=r.deadlineMap.weekOpenAt||'';qs('weekCloseAt').value=r.deadlineMap.weekCloseAt||'';
+        qs('weekDeadlineNote').value=r.deadlineMap.weekDeadlineNote||'';
+        qs('monthOpenAt').value=r.deadlineMap.monthOpenAt||'';qs('monthCloseAt').value=r.deadlineMap.monthCloseAt||'';
+        qs('monthDeadlineNote').value=r.deadlineMap.monthDeadlineNote||'';
       }
-      gasCall({ action: 'reject', type: type, rowIndex: rowIndex, adminId: adminId }, function(err, data) {
-        if (err || !data || !data.success) {
-          showToast('操作失敗，請重試');
-          if (card) card.querySelectorAll('button').forEach(function(b) { b.disabled = false; });
-          return;
-        }
-        if (card) {
-          card.style.opacity = '0.5';
-          var badge = card.querySelector('.badge');
-          if (badge) { badge.textContent = '已拒絕'; badge.className = 'badge badge-rejected'; }
-          card.querySelectorAll('.review-actions').forEach(function(a) { a.remove(); });
-        }
-        showToast('✕ 已拒絕');
-      });
+      if(r.system){
+        qs('mainTitleInput').value=r.system.main_title||'ANG.lo Engine';
+        qs('systemNameInput').value=r.system.system_name||'HR 系統';
+        qs('fallbackTextInput').value=r.system.fallback_text||'ANG';
+        if(r.system.clock_grace_before)qs('graceBeforeMin').value=r.system.clock_grace_before;
+        if(r.system.clock_grace_after)qs('graceAfterMin').value=r.system.clock_grace_after;
+      }
+      updateBadges();
     }
 
-    // ── Send notification ─────────────────────────────
-    function sendNotification() {
-      var target  = document.getElementById('notify-target').value;
-      var title   = document.getElementById('notify-title').value.trim();
-      var content = document.getElementById('notify-content').value.trim();
-      if (!title || !content) { showToast('請填寫標題與內容'); return; }
-
-      gasCall({ action: 'sendNotification', target: target, title: title, content: content, adminId: adminId }, function(err, data) {
-        if (err || !data || !data.success) { showToast('發送失敗，請重試'); return; }
-        document.getElementById('notify-title').value = '';
-        document.getElementById('notify-content').value = '';
-        showToast('🔔 通知已發送');
-      });
+    function applyCrt(r){
+      if(!r||!r.ok)return;crtData=r;
+      if(r.approverSettings){
+        qs('chkMultiLevel').checked=String(r.approverSettings.multi_level_review_enabled||'true')!=='false';
+        function sc(pre,v){var a=String(v||'Manager').split(',');if(qs('chk'+pre+'Manager'))qs('chk'+pre+'Manager').checked=a.indexOf('Manager')>-1;if(qs('chk'+pre+'Admin'))qs('chk'+pre+'Admin').checked=a.indexOf('Admin')>-1}
+        sc('Leave',r.approverSettings.leave_approvers);sc('Clockfix',r.approverSettings.clockfix_approvers);
+        sc('Upload',r.approverSettings.upload_approvers);sc('Msg',r.approverSettings.message_approvers);
+        sc('Salary',r.approverSettings.salary_approvers);
+      }
+      if(r.preselectSettings)applyPreselectUI(r.preselectSettings);
+      // 班別
+      if(r.shiftTypes){
+        shiftRows=Array.isArray(r.shiftTypes)?r.shiftTypes:[];
+        renderShiftRows();
+      }
+      if(r.mixedMode!==undefined)qs('chkMixedMode').checked=r.mixedMode===true||r.mixedMode==='true';
     }
 
-    // ── Toast ─────────────────────────────────────────
-    function showToast(msg) {
-      var t = document.getElementById('toast');
-      t.textContent = msg;
-      t.classList.add('show');
-      setTimeout(function() { t.classList.remove('show'); }, 2200);
+    function loadAll(){
+      if(!gas()){applyVisibility();return}
+      var a=getAllowed();
+      if(a.indexOf('manager')>-1)google.script.run.withSuccessHandler(applyMgr).withFailureHandler(function(){}).getManagerBootstrapData(UID,UTOKEN);
+      if(a.indexOf('admin')>-1)google.script.run.withSuccessHandler(applyAdm).withFailureHandler(function(){}).getAdminBootstrapData(UID,UTOKEN);
+      if(a.indexOf('creator')>-1)google.script.run.withSuccessHandler(applyCrt).withFailureHandler(function(){}).getCreatorBootstrapData(UID,UTOKEN);
     }
 
-    // ── Escape HTML ───────────────────────────────────
-    function escapeHtml(str) {
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+    // ==================== 初始化 ====================
+
+    function init(){
+      setText('topSub','管理中心｜'+UID+'｜'+UROLE);
+      initMonthSelects();
+      renderShiftRows();
+      applyVisibility();
+      var now=new Date();var ym=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+      if(qs('salaryMonth'))qs('salaryMonth').value=ym;
+      setTimeout(loadAll,300);
     }
 
-    // ── Boot ──────────────────────────────────────────
     init();
   </script>
 </body>
