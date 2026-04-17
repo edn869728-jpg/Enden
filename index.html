@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enden 專案說明</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent: #667eea;
+      --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --accent-light: #f0f2ff;
+      --green: #38a169;
+      --green-gradient: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+      --bg: #f4f6fb;
+      --card-bg: #ffffff;
+      --text: #2d3748;
+      --text-muted: #718096;
+      --border: #e2e8f0;
+      --shadow: 0 2px 12px rgba(0,0,0,0.08);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ─────────────────────────────────── */
+    .app-header {
+      background: var(--accent-gradient);
+      color: #fff;
+      padding: 32px 20px 36px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .app-header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+    .app-header .logo-icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+      display: block;
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.2));
+    }
+    .app-header h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    .app-header p {
+      font-size: 1rem;
+      opacity: 0.88;
+      max-width: 480px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* ── Main content ────────────────────────────── */
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 28px 16px 48px;
+    }
+
+    /* ── CTA button ──────────────────────────────── */
+    .cta-wrap {
+      text-align: center;
+      margin: 0 0 32px;
+    }
+    .btn-open {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--green-gradient);
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 700;
+      padding: 16px 36px;
+      border-radius: 50px;
+      text-decoration: none;
+      box-shadow: 0 6px 24px rgba(56,161,105,0.38);
+      transition: transform 0.18s, box-shadow 0.18s;
+      letter-spacing: 0.5px;
+    }
+    .btn-open:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 32px rgba(56,161,105,0.48);
+    }
+    .btn-open:active {
+      transform: translateY(0);
+    }
+    .btn-open i { font-size: 1.2rem; }
+
+    /* ── Section card ────────────────────────────── */
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+    .card-title i {
+      width: 32px;
+      height: 32px;
+      background: var(--accent-light);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    /* ── About section ───────────────────────────── */
+    .about-text {
+      font-size: 0.97rem;
+      color: var(--text-muted);
+      line-height: 1.8;
+    }
+    .about-text strong {
+      color: var(--text);
+    }
+
+    /* ── Steps ───────────────────────────────────── */
+    .steps {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .step-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--accent-gradient);
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+      box-shadow: 0 2px 8px rgba(102,126,234,0.3);
+    }
+    .step-body {
+      flex: 1;
+    }
+    .step-body strong {
+      display: block;
+      font-size: 0.97rem;
+      margin-bottom: 3px;
+    }
+    .step-body span {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ── Sheet preview link ──────────────────────── */
+    .sheet-link-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--accent-light);
+      border: 1px solid #d0d7ff;
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+    .sheet-link-row i {
+      color: var(--accent);
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .sheet-link-row a {
+      color: var(--accent);
+      font-size: 0.88rem;
+      word-break: break-all;
+      font-weight: 500;
+      text-decoration: none;
+    }
+    .sheet-link-row a:hover { text-decoration: underline; }
+
+    /* ── Highlight badge ─────────────────────────── */
+    .badge {
+      display: inline-block;
+      background: var(--accent-light);
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 600;
+      border-radius: 6px;
+      padding: 2px 8px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    /* ── Footer ──────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 24px 16px;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Header ─────────────────────────────────── -->
+  <header class="app-header">
+    <span class="logo-icon">📋</span>
+    <h1>Enden 專案資料說明</h1>
+    <p>歡迎使用 Enden 系統！本頁面說明專案資料表的用途，並提供快速存取連結。</p>
+  </header>
+
+  <!-- ── Main ───────────────────────────────────── -->
+  <main class="container">
+
+    <!-- CTA -->
+    <div class="cta-wrap">
+      <a class="btn-open"
+         href="https://docs.google.com/spreadsheets/d/1NZxOjKWa6OmzeYlDklbN_GcDzsFlLkC7kJGzi-1XDpU/edit?usp=sharing"
+         target="_blank" rel="noopener noreferrer">
+        <i class="fa-solid fa-table-cells-large"></i>
+        開啟 Google 表單
+      </a>
+    </div>
+
+    <!-- About -->
+    <div class="card">
+      <div class="card-title">
+        <i><i class="fa-solid fa-circle-info"></i></i>
+        關於此資料表
+      </div>
+      <p class="about-text">
+        此 Google 試算表是 <strong>Enden 專案</strong> 的核心資料儲存區，包含員工資料、打卡紀錄、請假申請、薪資明細等各類業務資訊。<br><br>
+        透過此表單，專案管理員可即時查看與更新系統資料；一般使用者亦可依授權範圍瀏覽相關記錄，協助日常業務流程順利進行。
+      </p>
+      <div class="sheet-link-row" style="margin-top:16px;">
+        <i class="fa-brands fa-google"></i>
+        <a href="https://docs.google.com/spreadsheets/d/1NZxOjKWa6OmzeYlDklbN_GcDzsFlLkC7kJGzi-1XDpU/edit?usp=sharing"
+           target="_blank" rel="noopener noreferrer">
+          https://docs.google.com/spreadsheets/d/1NZxOjKWa6OmzeYlDklbN_GcDzsFlLkC7kJGzi-1XDpU/edit?usp=sharing
+        </a>
+      </div>
+    </div>
+
+    <!-- Steps -->
+    <div class="card">
+      <div class="card-title">
+        <i><i class="fa-solid fa-list-ol"></i></i>
+        如何查看資料表
+      </div>
+      <ol class="steps">
+        <li class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>點擊「開啟 Google 表單」按鈕 <span class="badge">↑ 上方綠色按鈕</span></strong>
+            <span>或直接點擊上方的試算表連結，系統會自動在新分頁開啟 Google 試算表。</span>
+          </div>
+        </li>
+        <li class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>以 Google 帳號登入</strong>
+            <span>若尚未登入 Google 帳號，系統會提示您登入。請使用已獲授權的帳號，以確保能正常讀取資料。</span>
+          </div>
+        </li>
+        <li class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>切換工作表分頁查看各類資料</strong>
+            <span>試算表底部有多個分頁（如員工資料、打卡紀錄、請假申請等），點擊對應分頁即可查看。</span>
+          </div>
+        </li>
+        <li class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>依需求篩選或搜尋資料</strong>
+            <span>可使用 Google 試算表內建的篩選器（▼）或 <kbd style="background:#eee;border-radius:4px;padding:1px 6px;font-size:0.85em;">Ctrl + F</kbd> 搜尋關鍵字，快速找到所需紀錄。</span>
+          </div>
+        </li>
+      </ol>
+    </div>
+
+    <!-- Quick links to system pages -->
+    <div class="card">
+      <div class="card-title">
+        <i><i class="fa-solid fa-link"></i></i>
+        系統頁面快速入口
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:4px;">
+        <a href="employee.html"
+           style="flex:1;min-width:140px;display:flex;align-items:center;gap:8px;
+                  background:#f0f2ff;border:1px solid #d0d7ff;border-radius:10px;
+                  padding:12px 16px;text-decoration:none;color:#667eea;font-weight:600;font-size:0.92rem;
+                  transition:background 0.15s;">
+          <i class="fa-solid fa-user-clock"></i> 員工自助系統
+        </a>
+        <a href="admin.html"
+           style="flex:1;min-width:140px;display:flex;align-items:center;gap:8px;
+                  background:#fff5f5;border:1px solid #fcc;border-radius:10px;
+                  padding:12px 16px;text-decoration:none;color:#e53e3e;font-weight:600;font-size:0.92rem;
+                  transition:background 0.15s;">
+          <i class="fa-solid fa-shield-halved"></i> 管理後台
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    &copy; 2025 Enden 專案 &nbsp;·&nbsp; 資料儲存於 Google 試算表，請妥善保管您的帳號權限。
+  </footer>
+
+</body>
+</html>
